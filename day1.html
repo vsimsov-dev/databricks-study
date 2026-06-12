@@ -117,7 +117,7 @@
     <span>📅 2026년 6월 12일</span>
     <span>⏱ 약 15분</span>
     <span>🎯 초급</span>
-    <span>✏️ 퀴즈 5문제 + 복습 4문제</span>
+    <span>✏️ 퀴즈 5문제</span>
   </div>
 </div>
 
@@ -128,7 +128,7 @@
     <div class="body-text">
 
       <h3>🤔 왜 이 개념이 필요할까요?</h3>
-      <p>소영님이 매일 다루는 PP 필름 품질 데이터를 생각해봐요. 두께 측정값, 인장강도 같은 숫자 데이터가 있는가 하면, 불량 사진, 검사 보고서 PDF, 안전 교육 영상 같은 자료도 있죠. 지금은 이게 엑셀 파일, 공유 드라이브, ERP 시스템에 뿔뿔이 흩어져 있을 거예요. <strong>"이 데이터들을 한 곳에서 관리하고, AI까지 연결하려면 어떻게 해야 할까?"</strong> — 이 질문에 대한 답이 바로 오늘의 주제입니다.</p>
+      <p>고분자제품기술팀에서 매일 다루는 데이터를 생각해봐요. PP·PE·EAA 필름의 두께, 인장강도, 투명도 같은 숫자 데이터가 있는가 하면, 불량 사진, 검사 보고서 PDF, 시험 성적서 같은 자료도 있죠. 지금은 이게 엑셀 파일, 공유 드라이브, ERP 시스템에 뿔뿔이 흩어져 있을 거예요. <strong>"이 데이터들을 한 곳에서 관리하고, AI까지 연결하려면 어떻게 해야 할까?"</strong> — 이 질문에 대한 답이 바로 오늘의 주제입니다.</p>
 
       <h3>🏛️ 전통적인 방식 — 데이터 웨어하우스</h3>
       <p>2000년대부터 많은 기업이 사용해온 방식이에요. 쉽게 말하면 <strong>아주 잘 정리된 창고</strong>예요. 창고에 물건을 넣으려면 반드시 정해진 박스(형식)에 담아야 해요. 두께: 0.05mm, 강도: 120MPa처럼 칸이 딱 정해져 있고, 그 칸에 맞는 숫자나 텍스트만 넣을 수 있어요.</p>
@@ -185,27 +185,27 @@
         일반 데이터베이스가 "저장 후 수정 불가한 잠긴 엑셀"이라면, Delta Lake는 "자동 저장 + 버전 히스토리 + 동시 편집"이 되는 스마트한 공유 엑셀이에요. 여러 사람이 동시에 접근해도 충돌 없이 안전하게 작동해요.
       </div>
 
-      <h3>🏭 우리 업무에서는 이렇게 쓸 수 있어요</h3>
+      <h3>🏭 고분자제품기술팀 업무에서는 이렇게 쓸 수 있어요</h3>
       <div class="example-grid">
         <div class="example-card">
           <div class="ex-icon">📊</div>
-          <h4>품질 데이터 통합 관리</h4>
-          <p>두께·강도 측정값(정형)과 불량 사진·검사 보고서(비정형)를 한 플랫폼에서 관리. 수치와 이미지를 연결해 불량 원인 분석 자동화 가능.</p>
-        </div>
-        <div class="example-card">
-          <div class="ex-icon">🛡️</div>
-          <h4>안전 교육 자료 통합</h4>
-          <p>안전 교육 영상·PDF 자료(비정형)와 교육 이수 기록·테스트 점수(정형)를 함께 관리. AI로 교육 이수율 및 효과 분석 가능.</p>
+          <h4>제품 품질 데이터 통합</h4>
+          <p>PP·PE·EAA 필름의 두께·강도·투명도 측정값(정형)과 불량 사진·검사 보고서(비정형)를 한 플랫폼에서 관리. 수치와 이미지를 연결해 불량 원인 분석 자동화 가능.</p>
         </div>
         <div class="example-card">
           <div class="ex-icon">🔬</div>
-          <h4>신제품 개발 데이터</h4>
-          <p>레트로트·배터리 파우치용 PP 개발 과정의 실험 데이터, 배합 레시피, 시험 성적서를 모두 축적. 과거 데이터 기반 AI 예측 가능.</p>
+          <h4>신제품 개발 데이터 축적</h4>
+          <p>고분자 제품 개발 과정의 배합 레시피, 실험 데이터, 시험 성적서를 통합 관리. 과거 개발 이력 기반으로 AI가 최적 배합 조건 예측 가능.</p>
+        </div>
+        <div class="example-card">
+          <div class="ex-icon">🤝</div>
+          <h4>기술지원 이력 관리</h4>
+          <p>고객사별 기술지원 요청·처리 기록(정형)과 테스트 보고서·제안서 문서(비정형)를 통합. AI로 유사 이슈 검색 및 대응 방안 자동 제안 가능.</p>
         </div>
         <div class="example-card">
           <div class="ex-icon">⚗️</div>
-          <h4>화학물질 관리</h4>
-          <p>화학물질 MSDS 문서(비정형)와 사용량·재고 데이터(정형)를 통합. AI가 MSDS를 읽어 위험 등급 자동 분류 및 교육 자료 생성.</p>
+          <h4>소재 물성 데이터베이스</h4>
+          <p>PP·PE·EAA 각 그레이드별 물성 데이터를 통합 저장. 고객 요구 스펙에 맞는 최적 소재를 AI가 자동 추천하는 시스템 구축 가능.</p>
         </div>
       </div>
 
@@ -297,14 +297,14 @@
       </div>
 
       <div class="quiz-item" data-answer="1">
-        <div class="quiz-q"><span class="num">5</span>제조 현장에서 레이크하우스가 유용한 이유는?</div>
+        <div class="quiz-q"><span class="num">5</span>고분자 제품 개발 업무에서 레이크하우스가 유용한 이유는?</div>
         <div class="options">
           <button class="option" data-idx="0"><span class="opt-label">①</span> 정형 데이터만 빠르게 조회할 수 있어서</button>
-          <button class="option" data-idx="1"><span class="opt-label">②</span> 측정 수치(정형)와 불량 사진·보고서(비정형)를 한 플랫폼에서 통합하고 AI와 연결할 수 있어서</button>
+          <button class="option" data-idx="1"><span class="opt-label">②</span> 물성 측정값(정형)과 시험 보고서·배합 레시피(비정형)를 한 플랫폼에서 통합하고 AI와 연결할 수 있어서</button>
           <button class="option" data-idx="2"><span class="opt-label">③</span> 인터넷 없이도 동작해서</button>
           <button class="option" data-idx="3"><span class="opt-label">④</span> 엑셀 파일을 자동으로 생성해줘서</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크하우스는 정형·비정형 모두 저장하고 AI까지 바로 연결할 수 있어, 제조 데이터 통합에 최적화돼 있어요.</div>
+        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크하우스는 정형·비정형 데이터를 모두 저장하고 AI까지 바로 연결할 수 있어, 고분자 제품 개발·기술지원 업무 데이터 통합에 최적화돼 있어요.</div>
       </div>
 
     </div>
