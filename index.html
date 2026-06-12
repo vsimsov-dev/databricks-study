@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 스터디</title>
+  <style>
+    :root { --primary: #FF3621; --bg: #f7f8fc; --card: #fff; --text: #1a1a2e; --muted: #6b7280; --border: #e5e7eb; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); }
+
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: white; padding: 48px 32px; text-align: center;
+    }
+    .hero .logo { font-size: 40px; margin-bottom: 12px; }
+    .hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
+
+    .day-card {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--card); border-radius: 14px; padding: 18px 20px;
+      margin-bottom: 12px; text-decoration: none; color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1.5px solid var(--border);
+      transition: all .2s;
+    }
+    .day-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(255,54,33,.12); transform: translateY(-1px); }
+    .day-card.locked { opacity: .45; pointer-events: none; }
+    .day-num { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .day-card.locked .day-num { background: #d1d5db; }
+    .day-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .day-info p { font-size: 13px; color: var(--muted); }
+    .day-arrow { margin-left: auto; color: var(--muted); font-size: 18px; }
+
+    .coming { text-align: center; padding: 24px; color: var(--muted); font-size: 14px; }
+    .coming span { display: block; font-size: 28px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">📊</div>
+  <div class="badge">Databricks 입문 과정</div>
+  <h1>매일 10분, Databricks 전문가 되기</h1>
+  <p>매일 점심 12시에 새로운 강의가 업로드돼요</p>
+</div>
+
+<div class="container">
+  <div class="section-title">강의 목록</div>
+
+  <a class="day-card" href="day1.html">
+    <div class="day-num">1</div>
+    <div class="day-info">
+      <h3>Databricks와 레이크하우스 개념</h3>
+      <p>데이터 웨어하우스 vs 레이크 vs 레이크하우스</p>
+    </div>
+    <div class="day-arrow">→</div>
+  </a>
+
+  <div class="day-card locked">
+    <div class="day-num">2</div>
+    <div class="day-info">
+      <h3>Delta Lake 기초</h3>
+      <p>내일 점심 12시에 공개돼요</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">3</div>
+    <div class="day-info">
+      <h3>Unity Catalog 구조</h3>
+      <p>Catalog &gt; Schema &gt; Table 계층 이해</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">4</div>
+    <div class="day-info">
+      <h3>Spark란? 왜 빠른가?</h3>
+      <p>분산 처리의 마법</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">5</div>
+    <div class="day-info">
+      <h3>SQL로 데이터 조회하기</h3>
+      <p>SELECT 기초부터</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="coming">
+    <span>📅</span>
+    매일 새 강의가 추가돼요. 내일도 기대해주세요!
+  </div>
+</div>
+
+</body>
+</html>
