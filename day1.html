@@ -75,15 +75,16 @@
     .options { display: flex; flex-direction: column; gap: 8px; }
     .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; font-size: 14px; transition: all .2s; background: white; text-align: left; width: 100%; }
     .option:hover { border-color: var(--accent); background: #eef2ff; }
-    .option.selected { border-color: var(--accent); background: #eef2ff; font-weight: 600; }
+    .option.selected { border-color: var(--accent); background: #c7d2fe; font-weight: 700; box-shadow: 0 0 0 2px var(--accent); }
+    .option.selected .opt-label { color: #1e40af; }
     .option .opt-label { font-weight: 700; color: var(--accent); min-width: 20px; }
     .option.correct { border-color: var(--correct); background: #d1fae5; }
     .option.wrong { border-color: var(--wrong); background: #fee2e2; }
     .option.correct .opt-label { color: var(--correct); }
     .option.wrong .opt-label { color: var(--wrong); }
-    .num.ox { font-size: 11px; width: 32px; height: 32px; border-radius: 10px; }
-    .num.o { background: var(--correct); }
-    .num.x { background: var(--wrong); }
+    .quiz-q .num.ox { font-size: 13px; font-weight: 900; width: 32px; height: 32px; border-radius: 10px; }
+    .quiz-q .num.o { background: var(--correct); }
+    .quiz-q .num.x { background: var(--wrong); }
     .answer-box { display: none; margin-top: 12px; padding: 14px 18px; background: #f0fdf4; border-radius: 10px; font-size: 14px; color: #166534; border: 1px solid #bbf7d0; line-height: 1.6; }
     .answer-box.show { display: block; }
     .answer-box strong { display: block; margin-bottom: 4px; font-size: 15px; }
