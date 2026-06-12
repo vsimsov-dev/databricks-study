@@ -6,144 +6,104 @@
   <title>Databricks 입문 | Day 1 — 레이크하우스 개념</title>
   <style>
     :root {
-      --primary: #FF3621;
-      --primary-dark: #c42a18;
-      --bg: #f7f8fc;
-      --card: #ffffff;
-      --text: #1a1a2e;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --correct: #10b981;
-      --wrong: #ef4444;
-      --accent: #3b5bdb;
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
 
-    /* Header */
-    .hero {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-      color: white;
-      padding: 48px 32px 40px;
-      text-align: center;
-    }
-    .hero .badge {
-      display: inline-block;
-      background: var(--primary);
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-    }
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
     .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
     .hero p { color: #a0aec0; font-size: 15px; }
     .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
-    .hero .meta span { font-size: 13px; color: #cbd5e0; display: flex; align-items: center; gap: 6px; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
 
-    /* Layout */
-    .container { max-width: 780px; margin: 0 auto; padding: 32px 20px 60px; }
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
 
-    /* Section */
-    .section { background: var(--card); border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-    .section-title {
-      font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--primary); margin-bottom: 18px; display: flex; align-items: center; gap-8px;
-    }
-    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; margin-right: 8px; }
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
 
-    /* Concept cards */
-    .concept-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 18px 0; }
-    @media(max-width: 600px) { .concept-grid { grid-template-columns: 1fr; } }
-    .concept-card { border-radius: 12px; padding: 18px; text-align: center; }
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    .concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; }
+    @media(max-width: 620px) { .concept-grid { grid-template-columns: 1fr; } }
+    .concept-card { border-radius: 14px; padding: 20px; text-align: center; }
     .concept-card.warehouse { background: #eff6ff; border: 1.5px solid #bfdbfe; }
     .concept-card.lake { background: #f0fdf4; border: 1.5px solid #bbf7d0; }
     .concept-card.lakehouse { background: #fff7ed; border: 2px solid #fed7aa; }
-    .concept-card .icon { font-size: 32px; margin-bottom: 8px; }
-    .concept-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-    .concept-card p { font-size: 13px; color: var(--muted); }
-    .concept-card .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-top: 8px; }
+    .concept-card .icon { font-size: 36px; margin-bottom: 10px; }
+    .concept-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .concept-card ul { text-align: left; font-size: 13px; color: var(--muted); padding-left: 16px; margin-bottom: 10px; }
+    .concept-card ul li { margin-bottom: 4px; }
+    .concept-card .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 10px; margin-top: 6px; }
     .warehouse .tag { background: #dbeafe; color: #1d4ed8; }
     .lake .tag { background: #dcfce7; color: #15803d; }
     .lakehouse .tag { background: #ffedd5; color: #c2410c; }
 
-    /* Highlight box */
-    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 0 10px 10px 0; margin: 16px 0; font-size: 14px; }
-    .highlight strong { color: var(--primary-dark); }
+    .example-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+    @media(max-width: 580px) { .example-grid { grid-template-columns: 1fr; } }
+    .example-card { background: var(--bg); border-radius: 12px; padding: 18px; border: 1px solid var(--border); }
+    .example-card .ex-icon { font-size: 24px; margin-bottom: 8px; }
+    .example-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .example-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
-    /* Body text */
-    .body-text { font-size: 15px; color: #374151; }
-    .body-text p { margin-bottom: 14px; }
-    .body-text strong { color: var(--text); }
+    .term-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+    @media(max-width: 580px) { .term-grid { grid-template-columns: 1fr; } }
+    .term-card { background: var(--bg); border-radius: 12px; padding: 16px; border-left: 3px solid var(--accent); }
+    .term-card h4 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+    .term-card p { font-size: 13px; color: #4b5563; line-height: 1.6; }
 
-    /* Quiz */
-    .quiz-item { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; text-align: center; margin-top: 24px; }
+    .summary-box .summary-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px; }
+    .summary-box p { font-size: 17px; font-weight: 700; line-height: 1.8; }
+    .summary-box span { color: #FF3621; }
+
+    .quiz-item { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
     .quiz-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
-    .quiz-q .num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; font-size: 12px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; gap: 10px; }
+    .quiz-q .num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; min-width: 26px; background: var(--primary); color: white; border-radius: 50%; font-size: 12px; font-weight: 700; }
     .options { display: flex; flex-direction: column; gap: 8px; }
-    .option {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border);
-      cursor: pointer; font-size: 14px; transition: all .2s; background: white;
-      text-align: left; width: 100%;
-    }
+    .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid var(--border); cursor: pointer; font-size: 14px; transition: all .2s; background: white; text-align: left; width: 100%; }
     .option:hover { border-color: var(--accent); background: #eef2ff; }
     .option .opt-label { font-weight: 700; color: var(--accent); min-width: 20px; }
     .option.correct { border-color: var(--correct); background: #d1fae5; }
     .option.wrong { border-color: var(--wrong); background: #fee2e2; }
     .option.correct .opt-label { color: var(--correct); }
     .option.wrong .opt-label { color: var(--wrong); }
-    .option:disabled, .option.disabled { cursor: default; }
-
-    .answer-box { display: none; margin-top: 12px; padding: 12px 16px; background: #f0fdf4; border-radius: 10px; font-size: 14px; color: #166534; border: 1px solid #bbf7d0; }
+    .answer-box { display: none; margin-top: 12px; padding: 14px 18px; background: #f0fdf4; border-radius: 10px; font-size: 14px; color: #166534; border: 1px solid #bbf7d0; line-height: 1.6; }
     .answer-box.show { display: block; }
-    .answer-box strong { display: block; margin-bottom: 4px; }
-
-    /* Score */
-    .score-bar { background: var(--bg); border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px; display: none; }
+    .answer-box strong { display: block; margin-bottom: 4px; font-size: 15px; }
+    .score-bar { background: var(--bg); border-radius: 14px; padding: 24px; text-align: center; margin-top: 24px; display: none; border: 1px solid var(--border); }
     .score-bar.show { display: block; }
-    .score-num { font-size: 48px; font-weight: 900; color: var(--primary); }
+    .score-num { font-size: 52px; font-weight: 900; color: var(--primary); }
     .score-label { font-size: 14px; color: var(--muted); margin-top: 4px; }
-    .score-msg { margin-top: 12px; font-size: 15px; font-weight: 600; }
-
-    /* Check btn */
-    .check-btn {
-      margin-top: 20px; width: 100%; padding: 14px;
-      background: var(--primary); color: white; border: none;
-      border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: background .2s;
-    }
+    .score-msg { margin-top: 12px; font-size: 16px; font-weight: 600; }
+    .check-btn { margin-top: 24px; width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .2s; }
     .check-btn:hover { background: var(--primary-dark); }
     .check-btn:disabled { background: #9ca3af; cursor: default; }
 
-    /* Review */
-    .review-item { padding: 16px; background: var(--bg); border-radius: 12px; margin-bottom: 12px; }
-    .review-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
-    .review-item p { font-size: 14px; color: #4b5563; }
-    .review-item textarea {
-      width: 100%; margin-top: 8px; padding: 10px 12px;
-      border: 1.5px solid var(--border); border-radius: 8px;
-      font-size: 14px; font-family: inherit; resize: vertical; min-height: 70px;
-      transition: border .2s;
-    }
+    .review-item { padding: 20px; background: var(--bg); border-radius: 14px; margin-bottom: 14px; }
+    .review-item h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .review-hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .review-item textarea { width: 100%; margin-top: 8px; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; transition: border .2s; line-height: 1.6; }
     .review-item textarea:focus { outline: none; border-color: var(--accent); }
-    .reveal-btn {
-      margin-top: 8px; padding: 7px 16px; border-radius: 8px;
-      background: white; border: 1.5px solid var(--border);
-      font-size: 13px; font-weight: 600; cursor: pointer; color: var(--accent);
-      transition: all .2s;
-    }
+    .reveal-btn { margin-top: 10px; padding: 8px 18px; border-radius: 8px; background: white; border: 1.5px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--accent); transition: all .2s; }
     .reveal-btn:hover { border-color: var(--accent); background: #eef2ff; }
-    .model-answer { display: none; margin-top: 10px; padding: 12px; background: #eff6ff; border-radius: 8px; font-size: 14px; color: #1e40af; border: 1px solid #bfdbfe; }
+    .model-answer { display: none; margin-top: 12px; padding: 14px 18px; background: #eff6ff; border-radius: 10px; font-size: 14px; color: #1e40af; border: 1px solid #bfdbfe; line-height: 1.6; }
     .model-answer.show { display: block; }
 
-    /* Footer */
-    .footer { text-align: center; padding: 20px; font-size: 13px; color: var(--muted); }
-    .next-badge { display: inline-block; background: #1a1a2e; color: #a0aec0; padding: 10px 20px; border-radius: 20px; font-size: 13px; margin-top: 8px; }
+    .footer { text-align: center; padding: 24px 20px; font-size: 13px; color: var(--muted); }
+    .next-badge { display: inline-block; background: #1a1a2e; color: #a0aec0; padding: 12px 24px; border-radius: 20px; font-size: 14px; margin-top: 8px; }
     .next-badge strong { color: white; }
   </style>
 </head>
@@ -155,7 +115,7 @@
   <p>데이터 창고와 저수지를 합친 새로운 패러다임</p>
   <div class="meta">
     <span>📅 2026년 6월 12일</span>
-    <span>⏱ 약 10분</span>
+    <span>⏱ 약 15분</span>
     <span>🎯 초급</span>
     <span>✏️ 퀴즈 5문제 + 복습 4문제</span>
   </div>
@@ -163,47 +123,133 @@
 
 <div class="container">
 
-  <!-- 개념 설명 -->
   <div class="section">
     <div class="section-title">오늘의 개념</div>
     <div class="body-text">
-      <p>회사에서 데이터를 어디에 보관하냐고 물어보면 크게 두 종류가 있어요.</p>
-    </div>
 
-    <div class="concept-grid">
-      <div class="concept-card warehouse">
-        <div class="icon">🏛️</div>
-        <h3>데이터 웨어하우스</h3>
-        <p>잘 정리된 창고.<br>빠르고 깔끔하지만 정해진 형식만 가능</p>
-        <span class="tag">엑셀 같은 정형 데이터만</span>
-      </div>
-      <div class="concept-card lake">
-        <div class="icon">💧</div>
-        <h3>데이터 레이크</h3>
-        <p>뭐든 던져놓는 저수지.<br>유연하지만 뒤죽박죽 관리 어려움</p>
-        <span class="tag">PDF·영상·로그 다 OK</span>
-      </div>
-      <div class="concept-card lakehouse">
-        <div class="icon">🏠</div>
-        <h3>레이크하우스</h3>
-        <p>둘의 장점을 합침.<br>유연하면서도 빠르고 관리 가능!</p>
-        <span class="tag">Databricks의 핵심</span>
-      </div>
-    </div>
+      <h3>🤔 왜 이 개념이 필요할까요?</h3>
+      <p>소영님이 매일 다루는 PP 필름 품질 데이터를 생각해봐요. 두께 측정값, 인장강도 같은 숫자 데이터가 있는가 하면, 불량 사진, 검사 보고서 PDF, 안전 교육 영상 같은 자료도 있죠. 지금은 이게 엑셀 파일, 공유 드라이브, ERP 시스템에 뿔뿔이 흩어져 있을 거예요. <strong>"이 데이터들을 한 곳에서 관리하고, AI까지 연결하려면 어떻게 해야 할까?"</strong> — 이 질문에 대한 답이 바로 오늘의 주제입니다.</p>
 
-    <div class="body-text">
-      <p><strong>Databricks</strong>는 이 <strong>레이크하우스(Lakehouse)</strong> 개념을 처음 만든 회사예요. 핵심 기술은 <strong>Delta Lake</strong>라는 데이터 포맷인데, 데이터를 넣고 나서도 수정·삭제가 되고 버전 관리까지 돼요. 마치 공유 엑셀 문서인데 자동으로 히스토리가 남는 느낌이에요.</p>
-    </div>
+      <h3>🏛️ 전통적인 방식 — 데이터 웨어하우스</h3>
+      <p>2000년대부터 많은 기업이 사용해온 방식이에요. 쉽게 말하면 <strong>아주 잘 정리된 창고</strong>예요. 창고에 물건을 넣으려면 반드시 정해진 박스(형식)에 담아야 해요. 두께: 0.05mm, 강도: 120MPa처럼 칸이 딱 정해져 있고, 그 칸에 맞는 숫자나 텍스트만 넣을 수 있어요.</p>
+      <p>덕분에 <strong>조회 속도가 매우 빠르고</strong> 데이터가 깔끔하게 유지돼요. 하지만 단점도 명확해요. 불량품 사진 파일이나 안전 교육 영상은 넣을 수가 없어요. 그리고 데이터가 엄청나게 쌓일수록 비용이 기하급수적으로 올라가요. 대기업 기준으로 연간 수십억 원이 드는 경우도 흔해요.</p>
 
-    <div class="highlight">
-      💡 <strong>한 줄 요약:</strong> "데이터를 고민하지 말고 한 곳에 다 넣으세요" — 레이크하우스이기 때문에 가능한 말입니다.
+      <h3>💧 그래서 나온 것 — 데이터 레이크</h3>
+      <p>웨어하우스의 단점을 극복하기 위해 2010년대에 등장했어요. 이름 그대로 <strong>거대한 저수지</strong>예요. 형식 상관없이 모든 데이터를 다 받아요. 엑셀 파일, PDF, 사진, 동영상, 센서 로그... 다 OK예요. 저장 비용도 웨어하우스의 10분의 1 이하예요.</p>
+      <p>그런데 현실에서 문제가 생겼어요. 뭐든 다 던져 넣다 보니 <strong>어디에 뭐가 있는지 아무도 몰라요.</strong> "이 파일이 맞는 버전이야?" "이 데이터 믿을 수 있어?" 이런 질문에 아무도 답 못 하는 상황이 생기는 거예요. 업계에서는 이걸 <strong>데이터 늪(Data Swamp)</strong>이라고 불러요.</p>
+
+      <div class="concept-grid">
+        <div class="concept-card warehouse">
+          <div class="icon">🏛️</div>
+          <h3>데이터 웨어하우스</h3>
+          <ul>
+            <li>✅ 빠른 조회 속도</li>
+            <li>✅ 깔끔한 데이터 품질</li>
+            <li>❌ 정형 데이터만 가능</li>
+            <li>❌ 매우 높은 비용</li>
+            <li>❌ 확장이 어려움</li>
+          </ul>
+          <span class="tag">Oracle, Teradata</span>
+        </div>
+        <div class="concept-card lake">
+          <div class="icon">💧</div>
+          <h3>데이터 레이크</h3>
+          <ul>
+            <li>✅ 모든 형식 저장 가능</li>
+            <li>✅ 저렴한 비용</li>
+            <li>✅ 무한 확장 가능</li>
+            <li>❌ 관리가 어려움</li>
+            <li>❌ 품질 보장 안 됨</li>
+          </ul>
+          <span class="tag">Hadoop, S3</span>
+        </div>
+        <div class="concept-card lakehouse">
+          <div class="icon">🏠</div>
+          <h3>레이크하우스</h3>
+          <ul>
+            <li>✅ 모든 형식 저장 가능</li>
+            <li>✅ 빠른 조회 속도</li>
+            <li>✅ 데이터 품질 관리</li>
+            <li>✅ 합리적인 비용</li>
+            <li>✅ AI와 바로 연결</li>
+          </ul>
+          <span class="tag">Databricks ✨</span>
+        </div>
+      </div>
+
+      <h3>🏠 Databricks의 해법 — 레이크하우스 + Delta Lake</h3>
+      <p>Databricks는 2013년 UC Berkeley 연구팀이 창업한 회사예요. 이들이 내놓은 답은 <strong>레이크하우스(Lakehouse)</strong>예요. 핵심 기술은 <strong>Delta Lake</strong>라는 데이터 저장 포맷인데, 데이터를 넣은 후에도 <strong>수정·삭제가 자유롭고</strong>, 모든 변경 이력이 자동으로 기록돼요. 마치 Google 문서처럼 "5분 전 버전으로 되돌리기"가 가능한 거예요. 오픈소스라 특정 회사에 종속되지도 않아요.</p>
+
+      <div class="info-box">
+        <strong>💡 Delta Lake를 엑셀로 비유하면?</strong>
+        일반 데이터베이스가 "저장 후 수정 불가한 잠긴 엑셀"이라면, Delta Lake는 "자동 저장 + 버전 히스토리 + 동시 편집"이 되는 스마트한 공유 엑셀이에요. 여러 사람이 동시에 접근해도 충돌 없이 안전하게 작동해요.
+      </div>
+
+      <h3>🏭 우리 업무에서는 이렇게 쓸 수 있어요</h3>
+      <div class="example-grid">
+        <div class="example-card">
+          <div class="ex-icon">📊</div>
+          <h4>품질 데이터 통합 관리</h4>
+          <p>두께·강도 측정값(정형)과 불량 사진·검사 보고서(비정형)를 한 플랫폼에서 관리. 수치와 이미지를 연결해 불량 원인 분석 자동화 가능.</p>
+        </div>
+        <div class="example-card">
+          <div class="ex-icon">🛡️</div>
+          <h4>안전 교육 자료 통합</h4>
+          <p>안전 교육 영상·PDF 자료(비정형)와 교육 이수 기록·테스트 점수(정형)를 함께 관리. AI로 교육 이수율 및 효과 분석 가능.</p>
+        </div>
+        <div class="example-card">
+          <div class="ex-icon">🔬</div>
+          <h4>신제품 개발 데이터</h4>
+          <p>레트로트·배터리 파우치용 PP 개발 과정의 실험 데이터, 배합 레시피, 시험 성적서를 모두 축적. 과거 데이터 기반 AI 예측 가능.</p>
+        </div>
+        <div class="example-card">
+          <div class="ex-icon">⚗️</div>
+          <h4>화학물질 관리</h4>
+          <p>화학물질 MSDS 문서(비정형)와 사용량·재고 데이터(정형)를 통합. AI가 MSDS를 읽어 위험 등급 자동 분류 및 교육 자료 생성.</p>
+        </div>
+      </div>
+
+      <h3>📖 오늘의 핵심 용어</h3>
+      <div class="term-grid">
+        <div class="term-card">
+          <h4>데이터 웨어하우스</h4>
+          <p>정형 데이터만 저장하는 고성능 저장소. 빠르지만 비싸고 유연하지 않음.</p>
+        </div>
+        <div class="term-card">
+          <h4>데이터 레이크</h4>
+          <p>모든 형식의 데이터를 저렴하게 저장. 유연하지만 관리가 어려움.</p>
+        </div>
+        <div class="term-card">
+          <h4>레이크하우스</h4>
+          <p>레이크 + 웨어하우스의 장점을 결합. Databricks가 선도하는 최신 패러다임.</p>
+        </div>
+        <div class="term-card">
+          <h4>Delta Lake</h4>
+          <p>레이크하우스를 구현하는 오픈소스 저장 포맷. 수정·삭제·버전 관리 지원.</p>
+        </div>
+        <div class="term-card">
+          <h4>정형 데이터</h4>
+          <p>행과 열로 정리된 데이터. 숫자, 날짜, 코드값 등. 엑셀이 대표적.</p>
+        </div>
+        <div class="term-card">
+          <h4>비정형 데이터</h4>
+          <p>정해진 형식이 없는 데이터. 사진, 영상, PDF, 텍스트 문서 등.</p>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="summary-label">오늘의 핵심 요약</div>
+        <p>Databricks는 <span>레이크하우스</span>라는 개념으로<br>
+        "모든 데이터를 한 곳에, 빠르고 스마트하게"를 실현합니다.<br>
+        정형·비정형 구분 없이 저장하고, <span>AI까지 바로 연결</span>되는<br>
+        차세대 데이터 플랫폼이에요.</p>
+      </div>
+
     </div>
   </div>
 
-  <!-- 퀴즈 -->
   <div class="section">
     <div class="section-title">오늘의 퀴즈 — 5문제</div>
-
     <div id="quiz-container">
 
       <div class="quiz-item" data-answer="1">
@@ -214,57 +260,55 @@
           <button class="option" data-idx="2"><span class="opt-label">③</span> 저장 비용이 매우 저렴하다</button>
           <button class="option" data-idx="3"><span class="opt-label">④</span> 데이터 품질 관리 기능이 없다</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ②</strong>웨어하우스는 정형 데이터 특화, 빠른 조회가 강점이에요. 대신 비용이 높고 비정형 데이터는 넣기 어려워요.</div>
+        <div class="answer-box"><strong>✅ 정답: ②</strong>웨어하우스는 정형 데이터 특화, 빠른 조회가 강점이에요. 대신 비용이 높고 비정형 데이터(사진, PDF 등)는 저장할 수 없어요.</div>
       </div>
 
       <div class="quiz-item" data-answer="2">
-        <div class="quiz-q"><span class="num">2</span>데이터 레이크(Data Lake)의 단점은?</div>
+        <div class="quiz-q"><span class="num">2</span>데이터 레이크가 "데이터 늪(Data Swamp)"이 됐다고 표현하는 이유는?</div>
         <div class="options">
-          <button class="option" data-idx="0"><span class="opt-label">①</span> 정형 데이터만 저장할 수 있다</button>
-          <button class="option" data-idx="1"><span class="opt-label">②</span> 저장 용량이 너무 작다</button>
-          <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터가 뒤죽박죽이 되어 관리가 어렵다</button>
-          <button class="option" data-idx="3"><span class="opt-label">④</span> 비용이 데이터 웨어하우스보다 훨씬 비싸다</button>
+          <button class="option" data-idx="0"><span class="opt-label">①</span> 저장 비용이 너무 비싸서</button>
+          <button class="option" data-idx="1"><span class="opt-label">②</span> 저장 용량에 한계가 있어서</button>
+          <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터가 뒤죽박죽 쌓여 관리와 신뢰가 어려워져서</button>
+          <button class="option" data-idx="3"><span class="opt-label">④</span> 정형 데이터만 저장할 수 있어서</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ③</strong>뭐든 넣을 수 있다는 게 장점이지만, 관리 체계가 없으면 데이터 늪(Data Swamp)이 되기 쉬워요.</div>
+        <div class="answer-box"><strong>✅ 정답: ③</strong>뭐든 다 넣을 수 있다는 게 장점이지만, 관리 체계 없이 쌓이면 어디에 뭐가 있는지 아무도 모르는 늪이 돼버려요.</div>
       </div>
 
       <div class="quiz-item" data-answer="1">
-        <div class="quiz-q"><span class="num">3</span>레이크하우스(Lakehouse)란?</div>
+        <div class="quiz-q"><span class="num">3</span>레이크하우스(Lakehouse)를 가장 잘 표현한 것은?</div>
         <div class="options">
-          <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터 웨어하우스를 완전히 대체하는 새로운 개념</button>
-          <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터 레이크와 웨어하우스의 장점을 결합한 구조</button>
+          <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터 웨어하우스를 완전히 대체한 새로운 기술</button>
+          <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터 레이크의 유연함과 웨어하우스의 관리 능력을 결합한 구조</button>
           <button class="option" data-idx="2"><span class="opt-label">③</span> 비정형 데이터만 전문으로 처리하는 시스템</button>
-          <button class="option" data-idx="3"><span class="opt-label">④</span> 클라우드에서만 사용할 수 있는 데이터베이스</button>
+          <button class="option" data-idx="3"><span class="opt-label">④</span> 클라우드에서만 동작하는 데이터베이스</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크(유연성·저비용) + 웨어하우스(속도·관리)를 합쳐 단점을 최소화한 구조예요.</div>
+        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크(유연성·저비용) + 웨어하우스(속도·관리)의 장점을 합쳐 단점을 최소화한 구조예요.</div>
       </div>
 
       <div class="quiz-item" data-answer="3">
-        <div class="quiz-q"><span class="num">4</span>Databricks의 핵심 포맷 Delta Lake의 특징이 <u>아닌</u> 것은?</div>
+        <div class="quiz-q"><span class="num">4</span>Delta Lake의 특징이 <u>아닌</u> 것은?</div>
         <div class="options">
           <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 넣은 후에도 수정·삭제 가능</button>
-          <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터 버전 관리 지원</button>
+          <button class="option" data-idx="1"><span class="opt-label">②</span> 모든 변경 이력이 자동으로 기록됨</button>
           <button class="option" data-idx="2"><span class="opt-label">③</span> 오픈소스 포맷</button>
           <button class="option" data-idx="3"><span class="opt-label">④</span> 정형 데이터만 저장 가능</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ④</strong>Delta Lake는 정형·비정형 데이터 모두 지원해요. ①②③은 모두 Delta Lake의 실제 특징입니다.</div>
+        <div class="answer-box"><strong>✅ 정답: ④</strong>Delta Lake는 정형·비정형 데이터를 모두 지원해요. ①②③은 모두 실제 특징입니다.</div>
       </div>
 
       <div class="quiz-item" data-answer="1">
-        <div class="quiz-q"><span class="num">5</span>"데이터를 고민하지 말고 한 곳에 다 넣으세요"라는 말의 의미로 가장 적절한 것은?</div>
+        <div class="quiz-q"><span class="num">5</span>제조 현장에서 레이크하우스가 유용한 이유는?</div>
         <div class="options">
-          <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터 보안은 신경 쓰지 않아도 된다는 뜻</button>
-          <button class="option" data-idx="1"><span class="opt-label">②</span> 레이크하우스 구조로 어떤 형태의 데이터든 통합 관리 가능하다는 뜻</button>
-          <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 무조건 클라우드에 올려야 한다는 뜻</button>
-          <button class="option" data-idx="3"><span class="opt-label">④</span> 데이터 분석은 Databricks만 할 수 있다는 뜻</button>
+          <button class="option" data-idx="0"><span class="opt-label">①</span> 정형 데이터만 빠르게 조회할 수 있어서</button>
+          <button class="option" data-idx="1"><span class="opt-label">②</span> 측정 수치(정형)와 불량 사진·보고서(비정형)를 한 플랫폼에서 통합하고 AI와 연결할 수 있어서</button>
+          <button class="option" data-idx="2"><span class="opt-label">③</span> 인터넷 없이도 동작해서</button>
+          <button class="option" data-idx="3"><span class="opt-label">④</span> 엑셀 파일을 자동으로 생성해줘서</button>
         </div>
-        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크하우스는 정형·비정형 구분 없이 한 저장소에서 관리하므로 어디에 넣을지 고민할 필요가 없어요.</div>
+        <div class="answer-box"><strong>✅ 정답: ②</strong>레이크하우스는 정형·비정형 모두 저장하고 AI까지 바로 연결할 수 있어, 제조 데이터 통합에 최적화돼 있어요.</div>
       </div>
 
     </div>
-
     <button class="check-btn" id="submitBtn" onclick="checkAnswers()">정답 확인하기</button>
-
     <div class="score-bar" id="scoreBar">
       <div class="score-num" id="scoreNum">0/5</div>
       <div class="score-label">오늘의 점수</div>
@@ -272,53 +316,6 @@
     </div>
   </div>
 
-  <!-- 복습 문제 -->
-  <div class="section">
-    <div class="section-title">복습 문제 — 서술형 4문제</div>
-    <p style="font-size:14px; color:var(--muted); margin-bottom:18px;">직접 써보고 모범답안과 비교해보세요. 쓰는 과정이 기억에 가장 오래 남아요! ✍️</p>
-
-    <div class="review-item">
-      <h4>Q1. 데이터 웨어하우스와 데이터 레이크의 차이점을 간단히 설명해보세요.</h4>
-      <p>각각 어떤 데이터에 적합한지, 장단점 위주로 써보세요.</p>
-      <textarea placeholder="여기에 답을 써보세요..."></textarea>
-      <button class="reveal-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">
-        데이터 웨어하우스는 엑셀처럼 정해진 형식(정형 데이터)만 저장 가능하고 조회 속도가 빠르지만 비용이 높아요. 데이터 레이크는 PDF·영상·로그 등 모든 종류의 데이터를 저장할 수 있어 유연하지만, 체계 없이 쌓이면 관리가 어렵고 느려질 수 있어요.
-      </div>
-    </div>
-
-    <div class="review-item">
-      <h4>Q2. Databricks가 레이크하우스를 만든 이유는 무엇인가요?</h4>
-      <p>웨어하우스와 레이크 각각의 단점을 떠올리며 써보세요.</p>
-      <textarea placeholder="여기에 답을 써보세요..."></textarea>
-      <button class="reveal-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">
-        웨어하우스는 비싸고 비정형 데이터를 다루지 못하고, 레이크는 관리가 어렵고 속도가 느린 단점이 있었어요. Databricks는 두 단점을 없애고 장점만 합쳐 "저렴하고 유연하면서도 빠르고 관리되는" 레이크하우스를 만들었어요.
-      </div>
-    </div>
-
-    <div class="review-item">
-      <h4>Q3. Delta Lake가 일반 데이터 저장 방식과 다른 점은 무엇인가요?</h4>
-      <p>엑셀로 비유하면 어떤 기능이 추가된 건지 생각해보세요.</p>
-      <textarea placeholder="여기에 답을 써보세요..."></textarea>
-      <button class="reveal-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">
-        일반 데이터 저장 방식은 한 번 넣으면 수정·삭제가 어렵고 버전 관리가 안 돼요. Delta Lake는 데이터를 넣은 후에도 수정·삭제가 가능하고, 버전 기록이 자동으로 남아요. 엑셀로 비유하면 자동 저장 + 히스토리 추적 기능이 있는 공유 문서 같은 거예요.
-      </div>
-    </div>
-
-    <div class="review-item">
-      <h4>Q4. 우리 업무에서 레이크하우스가 유용할 수 있는 상황을 한 가지 생각해보세요.</h4>
-      <p>정형(수치 데이터)과 비정형(문서, 이미지) 데이터가 함께 있는 업무 예시를 떠올려보세요.</p>
-      <textarea placeholder="예) 품질 검사 수치 데이터와 불량 사진을 함께 관리할 때..."></textarea>
-      <button class="reveal-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">
-        예시: PP 필름 생산 공정에서 두께·강도 등 수치 데이터(정형)와 불량 사진·검사 보고서 PDF(비정형)를 한 플랫폼에서 통합 관리하면, 수치와 이미지를 연결해 불량 원인 분석이 훨씬 쉬워질 수 있어요. 안전 교육 자료(PPT·PDF)와 교육 이수 기록(수치)을 함께 관리하는 것도 좋은 예시예요.
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer -->
   <div class="footer">
     <p>오늘도 수고하셨어요! 🎉</p>
     <div class="next-badge">📅 다음 시간: <strong>Day 2 — Delta Lake 기초</strong>가 내일 점심 12시에 도착해요</div>
@@ -327,7 +324,7 @@
 </div>
 
 <script>
-  const correctAnswers = [1, 2, 1, 3, 1]; // 0-indexed
+  const correctAnswers = [1, 2, 1, 3, 1];
   let selected = [null, null, null, null, null];
   let submitted = false;
 
@@ -345,13 +342,9 @@
   function checkAnswers() {
     if (submitted) return;
     const unanswered = selected.filter(s => s === null).length;
-    if (unanswered > 0) {
-      alert(`아직 ${unanswered}문제를 풀지 않았어요!`);
-      return;
-    }
+    if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
     submitted = true;
     let score = 0;
-
     document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
       const correct = correctAnswers[qIdx];
       item.querySelectorAll('.option').forEach(btn => {
@@ -364,32 +357,17 @@
       item.querySelector('.answer-box').classList.add('show');
       if (selected[qIdx] === correct) score++;
     });
-
-    const scoreBar = document.getElementById('scoreBar');
-    scoreBar.classList.add('show');
+    document.getElementById('scoreBar').classList.add('show');
     document.getElementById('scoreNum').textContent = `${score}/5`;
-
-    const msgs = {
-      5: '🏆 완벽해요! 오늘 내용을 완전히 이해했어요!',
-      4: '🎉 아주 잘했어요! 거의 다 맞췄네요!',
-      3: '👍 절반 이상 맞췄어요! 틀린 문제 복습해봐요.',
-      2: '📚 조금 더 읽어보고 다시 도전해봐요!',
-      1: '💪 괜찮아요, 처음엔 다 어려워요. 내용 다시 읽어보세요!',
-      0: '💪 괜찮아요! 개념 설명 다시 읽고 재도전해봐요!'
-    };
+    const msgs = {5:'🏆 완벽해요! 오늘 내용을 완전히 이해했어요!', 4:'🎉 아주 잘했어요! 거의 다 맞췄네요!', 3:'👍 절반 이상 맞췄어요! 틀린 문제 복습해봐요.', 2:'📚 조금 더 읽어보고 다시 도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
     document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
     document.getElementById('submitBtn').disabled = true;
   }
 
   function toggleAnswer(btn) {
     const answer = btn.nextElementSibling;
-    if (answer.classList.contains('show')) {
-      answer.classList.remove('show');
-      btn.textContent = '모범답안 보기';
-    } else {
-      answer.classList.add('show');
-      btn.textContent = '모범답안 닫기';
-    }
+    if (answer.classList.contains('show')) { answer.classList.remove('show'); btn.textContent = '모범답안 보기'; }
+    else { answer.classList.add('show'); btn.textContent = '모범답안 닫기'; }
   }
 </script>
 </body>
