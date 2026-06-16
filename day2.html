@@ -397,7 +397,18 @@
       <div class="answer-box"><strong>✅ 정답: ①</strong><br>BI 팀과 ML 팀이 동일한 데이터 소스를 사용하면 데이터 복사·이동 비용이 없어지고, 분석 결과와 모델 학습 데이터 간 불일치가 사라집니다. 또한 데이터 거버넌스를 한 곳에서 관리하고, ML 모델이 실제 BI와 동일한 최신 데이터로 학습되어 신뢰도가 높아집니다.</div>
     </div>
 
-    <button class="quiz-submit" id="reviewSubmitBtn" onclick="checkReview()">✅ 복습 채점하기</button>
+    <div class="review-item">
+      <div class="review-q"><span class="review-num">5</span>우리 팀 업무(고분자 제품 개발·기술지원)에서 데이터 사일로 문제를 경험한 사례를 하나 떠올리고, 레이크하우스로 어떻게 해결할 수 있는지 서술해보세요.</div>
+      <textarea placeholder="예) 부서별로 PP 물성 데이터를 따로 관리해 버전이 맞지 않았던 경험 등..."></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="model-answer">
+        <strong>모범답안 예시:</strong><br>
+        고분자 제품 개발 시 배합 레시피·물성 측정값은 개발팀 Excel에, 고객 기술지원 이력은 영업팀 파일에 따로 관리되어 동일 제품 데이터가 두 곳에 다르게 저장되는 문제가 발생합니다.<br><br>
+        레이크하우스(Databricks)를 도입하면 두 데이터를 하나의 Delta 테이블로 통합해 항상 최신·단일 버전을 유지할 수 있고, 개발팀·영업팀 모두 같은 데이터를 기반으로 분석하게 되어 불일치 문제가 사라집니다. 또한 변경 이력이 자동으로 남아 누가 언제 수정했는지 추적도 가능해집니다.
+      </div>
+    </div>
+
+    <button class="quiz-submit" id="reviewSubmitBtn" onclick="checkReview()">✅ 복습 채점하기 (1~4번)</button>
     <div class="score-bar" id="reviewScoreBar">
       <div class="score-num" id="reviewScoreNum"></div>
       <div class="score-msg" id="reviewScoreMsg"></div>
@@ -473,6 +484,12 @@ document.querySelectorAll('#reviewSection .quiz-item').forEach((item, qIdx) => {
     });
   });
 });
+
+function toggleAnswer(btn) {
+  const a = btn.nextElementSibling;
+  if (a.classList.contains('show')) { a.classList.remove('show'); btn.textContent = '모범답안 보기'; }
+  else { a.classList.add('show'); btn.textContent = '모범답안 닫기'; }
+}
 
 function checkReview() {
   if (reviewSubmitted) return;
