@@ -398,13 +398,13 @@
     </div>
 
     <div class="review-item">
-      <div class="review-q"><span class="review-num">5</span>우리 팀 업무(고분자 제품 개발·기술지원)에서 데이터 사일로 문제를 경험한 사례를 하나 떠올리고, 레이크하우스로 어떻게 해결할 수 있는지 서술해보세요.</div>
-      <textarea placeholder="예) 부서별로 PP 물성 데이터를 따로 관리해 버전이 맞지 않았던 경험 등..."></textarea>
+      <div class="review-q"><span class="review-num">5</span>데이터 레이크가 "데이터 늪(Data Swamp)"이 되는 이유와, Databricks의 레이크하우스가 이를 어떻게 해결하는지 설명해보세요.</div>
+      <textarea placeholder="여기에 답을 작성해보세요..."></textarea>
       <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
       <div class="model-answer">
-        <strong>모범답안 예시:</strong><br>
-        고분자 제품 개발 시 배합 레시피·물성 측정값은 개발팀 Excel에, 고객 기술지원 이력은 영업팀 파일에 따로 관리되어 동일 제품 데이터가 두 곳에 다르게 저장되는 문제가 발생합니다.<br><br>
-        레이크하우스(Databricks)를 도입하면 두 데이터를 하나의 Delta 테이블로 통합해 항상 최신·단일 버전을 유지할 수 있고, 개발팀·영업팀 모두 같은 데이터를 기반으로 분석하게 되어 불일치 문제가 사라집니다. 또한 변경 이력이 자동으로 남아 누가 언제 수정했는지 추적도 가능해집니다.
+        <strong>모범답안:</strong><br>
+        데이터 레이크는 형식 제한 없이 모든 데이터를 저장할 수 있지만, 관리 체계 없이 데이터가 쌓이면 어디에 무엇이 있는지 파악하기 어렵고, 데이터 품질과 신뢰성을 보장할 수 없게 됩니다. 이를 "데이터 늪"이라 부릅니다.<br><br>
+        Databricks의 레이크하우스는 Delta Lake 기술을 통해 이를 해결합니다. ACID 트랜잭션으로 데이터 신뢰성을 보장하고, Schema Enforcement로 잘못된 데이터 유입을 차단하며, 트랜잭션 로그(_delta_log)로 모든 변경 이력을 관리해 데이터 레이크의 유연성은 유지하면서 품질과 거버넌스 문제를 해결합니다.
       </div>
     </div>
 
