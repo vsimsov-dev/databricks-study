@@ -398,13 +398,12 @@
     </div>
 
     <div class="review-item">
-      <div class="review-q"><span class="review-num">5</span>데이터 레이크가 "데이터 늪(Data Swamp)"이 되는 이유와, Databricks의 레이크하우스가 이를 어떻게 해결하는지 설명해보세요.</div>
-      <textarea placeholder="여기에 답을 작성해보세요..."></textarea>
-      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="review-q"><span class="review-num">5</span>Delta Lake에서 모든 변경 이력을 JSON으로 기록하는 폴더의 이름은 무엇인가요?</div>
+      <textarea placeholder="단어 하나로 입력해보세요..." style="min-height:52px; resize:none;"></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">정답 보기</button>
       <div class="model-answer">
-        <strong>모범답안:</strong><br>
-        데이터 레이크는 형식 제한 없이 모든 데이터를 저장할 수 있지만, 관리 체계 없이 데이터가 쌓이면 어디에 무엇이 있는지 파악하기 어렵고, 데이터 품질과 신뢰성을 보장할 수 없게 됩니다. 이를 "데이터 늪"이라 부릅니다.<br><br>
-        Databricks의 레이크하우스는 Delta Lake 기술을 통해 이를 해결합니다. ACID 트랜잭션으로 데이터 신뢰성을 보장하고, Schema Enforcement로 잘못된 데이터 유입을 차단하며, 트랜잭션 로그(_delta_log)로 모든 변경 이력을 관리해 데이터 레이크의 유연성은 유지하면서 품질과 거버넌스 문제를 해결합니다.
+        <strong>정답: _delta_log</strong><br>
+        Delta 테이블 폴더 안에 생성되는 디렉터리로, INSERT·UPDATE·DELETE 등 모든 변경 작업을 버전별 JSON 파일로 기록합니다. Time Travel과 ACID 트랜잭션의 핵심 기반입니다.
       </div>
     </div>
 
