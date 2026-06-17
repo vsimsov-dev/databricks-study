@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 3 — Unity Catalog 구조</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* 계층 구조 다이어그램 */
+    .hierarchy { margin: 24px 0; }
+    .hierarchy-level { display: flex; align-items: stretch; gap: 0; margin-bottom: 6px; }
+    .h-indent { flex-shrink: 0; }
+    .h-box { flex: 1; border-radius: 10px; padding: 14px 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+    .h-box.catalog { background: #fff7ed; border: 2px solid #fed7aa; color: #9a3412; }
+    .h-box.schema  { background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e40af; }
+    .h-box.table   { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; }
+    .h-box.view    { background: #faf5ff; border: 1.5px solid #d8b4fe; color: #6d28d9; }
+    .h-box .h-icon { font-size: 22px; flex-shrink: 0; }
+    .h-connector { font-size: 20px; color: var(--muted); padding: 0 8px; display: flex; align-items: center; }
+
+    /* 기능 카드 */
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    @media(max-width: 580px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 14px; padding: 18px; }
+    .feature-card .f-icon { font-size: 28px; margin-bottom: 8px; }
+    .feature-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* 비교 카드 */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    @media(max-width: 580px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-card { border-radius: 14px; padding: 20px; }
+    .compare-card.before { background: #fef2f2; border: 1.5px solid #fca5a5; }
+    .compare-card.after  { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .compare-card .c-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .compare-card.before .c-title { color: #dc2626; }
+    .compare-card.after  .c-title { color: #16a34a; }
+    .compare-card ul { font-size: 13px; color: #374151; padding-left: 18px; }
+    .compare-card ul li { margin-bottom: 6px; }
+
+    /* 권한 테이블 */
+    .perm-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+    .perm-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; font-weight: 600; }
+    .perm-table th:first-child { border-radius: 8px 0 0 0; }
+    .perm-table th:last-child { border-radius: 0 8px 0 0; }
+    .perm-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #374151; vertical-align: top; }
+    .perm-table tr:last-child td { border-bottom: none; }
+    .perm-table tr:nth-child(even) td { background: #f9fafb; }
+    .badge-perm { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+    .badge-perm.blue  { background: #dbeafe; color: #1d4ed8; }
+    .badge-perm.green { background: #dcfce7; color: #15803d; }
+    .badge-perm.red   { background: #fee2e2; color: #b91c1c; }
+
+    /* 용어 카드 */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+    .term-card { background: #fafafa; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-word { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .term-card .t-def  { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    /* 한줄요약 */
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; margin: 20px 0; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px; }
+    .summary-box .s-text  { font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .summary-box .s-text span { color: #FFA500; }
+
+    /* 퀴즈 */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong   { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong   .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o  { background:#10b981; }
+    .num.x  { background:#ef4444; }
+
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* 복습 */
+    .review-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .review-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+    .review-num { width: 28px; height: 28px; background: #6b7280; color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; color: var(--text); }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    .answer-toggle { background: none; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: all .2s; }
+    .answer-toggle:hover { background: #eef2ff; }
+    .model-answer { display: none; margin-top: 10px; padding: 14px 16px; background: #eff6ff; border-radius: 10px; font-size: 13px; color: #1e40af; line-height: 1.7; border: 1px solid #93c5fd; }
+    .model-answer.show { display: block; }
+
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 18px; font-weight: 700; color: #FFA500; }
+    .footer-card p { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #a0aec0; font-size: 13px; text-decoration: none; margin-top: 16px; transition: color .2s; }
+    .back-link:hover { color: white; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 3 · Unity Catalog</div>
+  <h1>Unity Catalog 구조</h1>
+  <p>데이터를 체계적으로 관리하는 3단계 계층 구조</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">개념 설명</div>
+    <div class="body-text">
+
+      <h3>Unity Catalog이란?</h3>
+      <p>
+        데이터가 많아질수록 "이 테이블이 어디 있지?", "이 데이터를 누가 볼 수 있지?" 같은 질문이 생깁니다.
+        Databricks에서는 <strong>Unity Catalog</strong>이 이 문제를 해결합니다.
+        Unity Catalog은 Databricks 플랫폼 전체의 <strong>데이터 자산을 한 곳에서 관리하는 통합 거버넌스 레이어</strong>입니다.
+        테이블, 뷰, 파일, 모델까지 모두 등록하고, 누가 어떤 데이터에 접근할 수 있는지 권한을 중앙에서 제어합니다.
+      </p>
+
+      <h3>3단계 계층 구조: Catalog &gt; Schema &gt; Table</h3>
+      <p>
+        Unity Catalog의 핵심은 <strong>3단계 네임스페이스(namespace)</strong>입니다.
+        마치 회사 파일 서버에서 <em>"부서 폴더 → 프로젝트 폴더 → 파일"</em> 구조로 관리하는 것과 같습니다.
+      </p>
+
+      <div class="hierarchy">
+        <div class="hierarchy-level">
+          <div class="h-box catalog">
+            <span class="h-icon">🗂️</span>
+            <div>
+              <strong>Catalog (카탈로그)</strong> — 최상위 컨테이너. 보통 사업 단위 또는 환경(dev/prod)으로 구분.<br>
+              <span style="font-size:12px; color:#9a3412;">예: <code>polymer_tech</code>, <code>sales</code>, <code>dev_catalog</code></span>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:18px; color:var(--muted); margin: 2px 0 2px 24px;">↓ 포함</div>
+        <div class="hierarchy-level">
+          <div style="width:24px; flex-shrink:0;"></div>
+          <div class="h-box schema">
+            <span class="h-icon">📁</span>
+            <div>
+              <strong>Schema (스키마)</strong> — 카탈로그 안의 중간 폴더. 주제 또는 팀 단위로 구분.<br>
+              <span style="font-size:12px; color:#1e40af;">예: <code>film_quality</code>, <code>customer_support</code>, <code>raw_data</code></span>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center; font-size:18px; color:var(--muted); margin: 2px 0 2px 48px;">↓ 포함</div>
+        <div class="hierarchy-level">
+          <div style="width:48px; flex-shrink:0;"></div>
+          <div class="h-box table">
+            <span class="h-icon">📋</span>
+            <div>
+              <strong>Table / View (테이블/뷰)</strong> — 실제 데이터가 담긴 단위.<br>
+              <span style="font-size:12px; color:#166534;">예: <code>thickness_measurements</code>, <code>defect_images</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>💡 3단계 주소로 데이터 접근하기</strong>
+        Unity Catalog에서 테이블은 아래처럼 <strong>점(.)으로 연결된 3단계 이름</strong>으로 접근합니다.<br>
+        <code style="display:block; background:#dbeafe; padding:10px 14px; border-radius:8px; margin-top:8px; font-size:13px; font-family:monospace;">
+          -- catalog.schema.table 형식<br>
+          SELECT * FROM polymer_tech.film_quality.thickness_measurements;<br><br>
+          -- 현재 catalog/schema 설정 후 단축 접근도 가능<br>
+          USE CATALOG polymer_tech;<br>
+          USE SCHEMA film_quality;<br>
+          SELECT * FROM thickness_measurements;
+        </code>
+      </div>
+
+      <h3>Unity Catalog의 핵심 기능</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="f-icon">🔐</div>
+          <h4>중앙 권한 관리 (Fine-grained Access Control)</h4>
+          <p>카탈로그·스키마·테이블·컬럼 단위로 누가 읽고 쓸 수 있는지 한 곳에서 제어합니다. 컬럼 마스킹으로 민감 데이터는 숨길 수도 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🔍</div>
+          <h4>데이터 탐색 (Data Discovery)</h4>
+          <p>등록된 모든 테이블을 검색하고, 각 테이블의 설명·소유자·태그를 확인할 수 있습니다. "이 데이터가 어디 있지?"를 빠르게 해결합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🗺️</div>
+          <h4>데이터 리니지 (Data Lineage)</h4>
+          <p>특정 테이블이 어떤 원본 데이터에서 만들어졌는지, 그 테이블로 어떤 다운스트림 테이블이 만들어지는지 계보를 시각화합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">📊</div>
+          <h4>감사 로그 (Audit Log)</h4>
+          <p>누가 언제 어떤 데이터에 접근했는지 자동으로 기록됩니다. 보안 감사나 규정 준수에 필수적인 기능입니다.</p>
+        </div>
+      </div>
+
+      <h3>권한(Permission) 구조</h3>
+      <p>
+        Unity Catalog의 권한은 <strong>계층적으로 상속</strong>됩니다. 상위 레벨(카탈로그)에 권한을 부여하면 하위(스키마, 테이블)에도 자동으로 적용됩니다. 반대로 하위 레벨에만 특정 권한을 주는 것도 가능합니다.
+      </p>
+
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th>권한 레벨</th>
+            <th>대표 권한</th>
+            <th>설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge-perm red">Catalog</span></td>
+            <td>USE CATALOG, CREATE SCHEMA</td>
+            <td>카탈로그 전체 접근. 하위 모든 스키마·테이블에 상속됨.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-perm blue">Schema</span></td>
+            <td>USE SCHEMA, CREATE TABLE</td>
+            <td>해당 스키마 안의 테이블 접근·생성 권한.</td>
+          </tr>
+          <tr>
+            <td><span class="badge-perm green">Table</span></td>
+            <td>SELECT, MODIFY</td>
+            <td>특정 테이블만 읽기(SELECT) 또는 수정(MODIFY) 권한.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <strong>💡 권한 부여 SQL 예시</strong>
+        <code style="display:block; background:#dbeafe; padding:10px 14px; border-radius:8px; margin-top:8px; font-size:13px; font-family:monospace;">
+          -- 그룹에 카탈로그 접근 권한 부여<br>
+          GRANT USE CATALOG ON CATALOG polymer_tech TO `data_team`;<br><br>
+          -- 특정 테이블 읽기 권한만 부여<br>
+          GRANT SELECT ON TABLE polymer_tech.film_quality.thickness_measurements TO `analyst_group`;
+        </code>
+      </div>
+
+      <h3>기존 방식과의 비교</h3>
+      <div class="compare-grid">
+        <div class="compare-card before">
+          <div class="c-title">❌ Unity Catalog 없이</div>
+          <ul>
+            <li>팀마다 데이터가 따로 흩어져 있음</li>
+            <li>권한 관리가 워크스페이스별로 분리됨</li>
+            <li>어떤 테이블이 있는지 파악 불가</li>
+            <li>데이터 출처 추적이 어려움</li>
+            <li>컬럼 단위 보안 적용 불가</li>
+          </ul>
+        </div>
+        <div class="compare-card after">
+          <div class="c-title">✅ Unity Catalog 사용 시</div>
+          <ul>
+            <li>하나의 카탈로그에서 전사 데이터 관리</li>
+            <li>중앙 권한 관리, 워크스페이스 간 공유</li>
+            <li>검색·태그로 데이터 빠르게 탐색</li>
+            <li>리니지로 데이터 흐름 시각화</li>
+            <li>컬럼·행 단위 세밀한 보안 적용</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>고분자제품기술팀에서는 이렇게 쓸 수 있어요</h3>
+      <p>
+        팀에서 Unity Catalog을 활용한다면 이런 구조를 생각해볼 수 있습니다.<br>
+        <strong>Catalog:</strong> <code>polymer_tech</code> (팀 전체 데이터)<br>
+        <strong>Schema:</strong> <code>film_quality</code>, <code>rd_experiments</code>, <code>customer_support</code><br>
+        <strong>Table:</strong> <code>thickness_data</code>, <code>tensile_strength</code>, <code>defect_log</code>, <code>tds_specs</code>
+      </p>
+      <p>
+        예를 들어 PP TDS 챗봇을 만든다면 <code>polymer_tech.tds.pp_grades</code>처럼 명확한 3단계 주소로 관리하고,
+        분석팀에는 SELECT만, 개발팀에는 CREATE TABLE까지 부여하는 식으로 <strong>역할별 권한을 정교하게 분리</strong>할 수 있습니다.
+      </p>
+
+      <h3>핵심 용어 카드</h3>
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="t-word">Unity Catalog</div>
+          <div class="t-def">Databricks의 통합 데이터 거버넌스 레이어. 데이터 자산 관리·권한·리니지를 한 곳에서 처리.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Catalog</div>
+          <div class="t-def">3단계 계층의 최상위. 사업 단위나 환경(dev/prod)으로 구분하는 최대 컨테이너.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Schema</div>
+          <div class="t-def">카탈로그 안의 중간 폴더. 주제 또는 팀 단위로 테이블을 묶는 논리적 단위.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Data Lineage</div>
+          <div class="t-def">데이터의 출처부터 하류까지 흐름을 추적하는 계보. 오류 원인 파악에 핵심.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Fine-grained Access</div>
+          <div class="t-def">컬럼·행 단위까지 세밀하게 권한을 나누는 접근 제어 방식.</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-label">📌 한 줄 요약</div>
+        <div class="s-text">
+          Unity Catalog은 <span>Catalog &gt; Schema &gt; Table</span>의 3단계 구조로<br>
+          모든 데이터 자산을 중앙에서 관리하고, <span>권한·리니지·탐색</span>을 한 번에 해결합니다.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section">
+    <div class="section-title">오늘의 퀴즈</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">1</span>Unity Catalog의 3단계 계층 구조를 올바른 순서로 나열한 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Schema &gt; Catalog &gt; Table</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Table &gt; Schema &gt; Catalog</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Catalog &gt; Schema &gt; Table</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Catalog &gt; Table &gt; Schema</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>Unity Catalog는 최상위 Catalog, 그 안에 Schema, 그 안에 Table(또는 View) 순서의 3단계 계층 구조를 사용합니다. SQL로 접근할 때는 <code>catalog.schema.table</code> 형식을 사용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">2</span>Unity Catalog에서 Data Lineage 기능이 제공하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 테이블의 데이터를 자동으로 정렬하는 기능</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 특정 테이블이 어떤 원본에서 만들어졌고, 어떤 테이블로 흘러가는지 계보를 시각화하는 기능</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 자동으로 백업하는 기능</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 쿼리 실행 속도를 높이는 최적화 기능</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>Data Lineage(데이터 리니지)는 데이터의 출처(업스트림)부터 파생된 테이블(다운스트림)까지 흐름을 시각화합니다. 오류가 발생했을 때 원인 데이터를 빠르게 추적하고, 변경 영향도를 파악하는 데 핵심 기능입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>Unity Catalog에서 권한이 계층적으로 상속된다는 것은 무엇을 의미하나요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Catalog에 부여한 권한이 그 안의 Schema와 Table에도 자동 적용된다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 권한을 한 사람에게 부여하면 모든 사람에게 자동으로 복사된다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 새 테이블을 만들면 기존 테이블의 데이터가 자동으로 복사된다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 권한은 테이블 단위로만 관리할 수 있다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong><br>Unity Catalog의 권한은 상위 레벨에서 하위로 상속됩니다. 예를 들어 <code>USE CATALOG</code> 권한을 부여하면 그 카탈로그 안의 모든 스키마·테이블에도 접근 권한이 내려갑니다. 단, 하위 레벨에서 더 세밀한 제어를 추가하는 것도 가능합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span><code>polymer_tech.film_quality.thickness_measurements</code>에서 <code>film_quality</code>에 해당하는 계층은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Catalog (카탈로그)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Table (테이블)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> View (뷰)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Schema (스키마)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong><br><code>catalog.schema.table</code> 형식에서 가운데에 위치한 <code>film_quality</code>는 Schema(스키마)입니다. <code>polymer_tech</code>가 Catalog, <code>thickness_measurements</code>가 Table에 해당합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">5</span>Unity Catalog의 감사 로그(Audit Log) 기능으로 확인할 수 있는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 각 테이블의 데이터 값 변경 이력</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Delta Lake의 _delta_log에 기록된 트랜잭션 정보</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 누가 언제 어떤 데이터에 접근했는지의 이력</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 클러스터의 CPU 사용량 추이</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>Unity Catalog의 감사 로그는 사용자가 언제, 어떤 테이블에, 어떤 쿼리로 접근했는지를 자동으로 기록합니다. 보안 감사, GDPR·데이터 규정 준수, 이상 접근 탐지에 활용됩니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">✅ 채점하기</button>
+
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- ③ 어제 복습 -->
+  <div class="section" id="reviewSection">
+    <div class="section-title">어제 배운 내용 복습 — Day 2: Delta Lake 기초</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>Delta Lake가 일반 Parquet 저장 방식과 다른 핵심 차이점은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 행(row) 단위로 저장해 조회 속도를 높인다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 트랜잭션 로그(_delta_log)를 추가해 ACID 속성을 보장한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 클라우드 스토리지 대신 로컬 디스크에만 저장한다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 정형 데이터만 저장할 수 있다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>Delta Lake는 Parquet 파일 위에 _delta_log라는 트랜잭션 로그를 덧씌워 ACID(원자성·일관성·격리성·지속성) 속성을 보장합니다. 데이터 자체는 여전히 컬럼형 Parquet 포맷으로 저장됩니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">2</span>Delta Lake의 Time Travel을 사용하는 SQL 문법으로 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> <code>SELECT * FROM my_table ROLLBACK TO VERSION 3;</code></button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> <code>SELECT * FROM my_table HISTORY AS OF 3;</code></button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> <code>SELECT * FROM my_table VERSION AS OF 3;</code></button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> <code>SELECT * FROM my_table WHERE version = 3;</code></button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>Delta Lake의 Time Travel은 <code>VERSION AS OF [버전번호]</code> 또는 <code>TIMESTAMP AS OF '[타임스탬프]'</code> 구문을 사용합니다. ROLLBACK, HISTORY, WHERE 구문은 Time Travel 문법이 아닙니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>ACID에서 'I'에 해당하는 Isolation(격리성)의 의미는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 동시에 여러 작업이 실행돼도 서로 간섭하지 않는다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터를 암호화해 외부 접근을 차단한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 하나의 트랜잭션이 완전히 끝난 후에야 다음 트랜잭션이 시작된다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 완료된 데이터는 영구 보존된다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong><br>격리성(Isolation)은 동시에 여러 트랜잭션이 실행되더라도 서로 간섭하지 않도록 보장하는 속성입니다. 누군가 데이터를 읽는 중에 다른 사람이 데이터를 쓰더라도 읽기 작업이 방해받지 않습니다. ④는 지속성(Durability)에 해당합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>Delta Lake의 Schema Enforcement와 Schema Evolution의 차이로 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Schema Enforcement는 새 컬럼을 자동으로 추가하고, Schema Evolution은 잘못된 데이터를 거부한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 두 기능 모두 스키마 변경을 막는 역할을 한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Schema Evolution은 데이터를 암호화하는 기능이다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Schema Enforcement는 정의된 스키마와 다른 데이터 유입을 막고, Schema Evolution은 의도적으로 스키마를 변경하는 것을 허용한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong><br>Schema Enforcement는 기존 스키마와 맞지 않는 데이터가 들어오면 자동으로 거부하는 보호 기능이고, Schema Evolution은 새 컬럼 추가처럼 의도적인 스키마 변경을 허용하는 유연성 기능입니다. 두 기능이 함께 동작해 데이터 품질과 유연성을 동시에 보장합니다.</div>
+    </div>
+
+    <div class="review-item">
+      <div class="review-q"><span class="review-num">5</span>Delta Lake에서 모든 변경 이력을 버전별 JSON으로 기록하는 폴더 이름은 무엇인가요?</div>
+      <textarea placeholder="단어 하나로 입력해보세요..." style="min-height:52px; resize:none;"></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">정답 보기</button>
+      <div class="model-answer">
+        <strong>정답: _delta_log</strong><br>
+        Delta 테이블 폴더 안에 자동으로 생성되는 디렉터리입니다. INSERT·UPDATE·DELETE·MERGE 등 모든 변경 작업을 버전 번호별 JSON 파일로 기록하며, ACID 트랜잭션과 Time Travel의 핵심 기반이 됩니다.
+      </div>
+    </div>
+
+    <button class="quiz-submit" id="reviewSubmitBtn" onclick="checkReview()">✅ 복습 채점하기 (1~4번)</button>
+    <div class="score-bar" id="reviewScoreBar">
+      <div class="score-num" id="reviewScoreNum"></div>
+      <div class="score-msg" id="reviewScoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">NEXT UP</div>
+    <h3>Day 4 — Databricks Notebook과 클러스터</h3>
+    <p>Notebook에서 Python·SQL을 실행하는 방법과 클러스터 유형(Interactive vs Job)을 배울 예정이에요!</p>
+    <a class="back-link" href="index.html">← 전체 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+const correctAnswers = [2, 1, 0, 3, 2];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.section:nth-child(2) .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.section:nth-child(2) .quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+
+const reviewAnswers = [1, 2, 0, 3];
+let reviewSelected = [null, null, null, null];
+let reviewSubmitted = false;
+
+document.querySelectorAll('#reviewSection .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (reviewSubmitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      reviewSelected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function toggleAnswer(btn) {
+  const a = btn.nextElementSibling;
+  if (a.classList.contains('show')) { a.classList.remove('show'); btn.textContent = '정답 보기'; }
+  else { a.classList.add('show'); btn.textContent = '정답 닫기'; }
+}
+
+function checkReview() {
+  if (reviewSubmitted) return;
+  const unanswered = reviewSelected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  reviewSubmitted = true;
+  let score = 0;
+  document.querySelectorAll('#reviewSection .quiz-item').forEach((item, qIdx) => {
+    const correct = reviewAnswers[qIdx];
+    const isCorrect = reviewSelected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === reviewSelected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('reviewScoreBar').classList.add('show');
+  document.getElementById('reviewScoreNum').textContent = `${score}/4`;
+  const msgs = {4:'🏆 완벽해요! Day 2 내용을 완전히 숙지했어요!', 3:'🎉 아주 잘했어요!', 2:'👍 절반 이상 맞췄어요! 틀린 문제 다시 확인해봐요.', 1:'📚 Day 2 개념 설명을 다시 읽어봐요!', 0:'💪 괜찮아요, 처음엔 다 어려워요!'};
+  document.getElementById('reviewScoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('reviewSubmitBtn').disabled = true;
+}
+</script>
+
+</body>
+</html>
