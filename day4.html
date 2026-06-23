@@ -1,292 +1,507 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Day 4 — Spark란? 왜 빠른가? | Databricks 학습</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #f7f8fc; color: #1a1a2e; line-height: 1.7; }
-  header { background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); color: white; padding: 48px 24px 36px; text-align: center; }
-  .day-badge { display: inline-block; background: #FF3621; color: white; font-size: 13px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px; letter-spacing: 1px; }
-  header h1 { font-size: 2rem; margin-bottom: 8px; }
-  header p { opacity: 0.8; font-size: 1rem; }
-  .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
-  .section { background: white; border-radius: 16px; padding: 32px; margin-bottom: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
-  .section-title { font-size: 1.25rem; font-weight: 700; color: #0f3460; border-left: 4px solid #FF3621; padding-left: 14px; margin-bottom: 22px; }
-  .intro-box { background: linear-gradient(135deg, #fff3f0, #ffe8e5); border: 1.5px solid #ffccc5; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; font-size: 15px; }
-  .intro-box strong { color: #FF3621; }
-  .concept-block { margin-bottom: 24px; }
-  .concept-block h3 { font-size: 1.05rem; font-weight: 700; color: #0f3460; margin-bottom: 8px; }
-  .concept-block p { font-size: 15px; color: #2d2d44; }
-  .analogy-box { background: #eef2ff; border-left: 4px solid #3b5bdb; border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 10px 0 18px; font-size: 14px; color: #2d3a8c; }
-  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
-  .compare-card { border-radius: 12px; padding: 20px; border: 1.5px solid #e5e7eb; }
-  .compare-card.old { background: #fef9f0; border-color: #f5c518; }
-  .compare-card.new { background: #f0fdf4; border-color: #10b981; }
-  .compare-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
-  .compare-card.old h4 { color: #b45309; }
-  .compare-card.new h4 { color: #065f46; }
-  .compare-card ul { list-style: none; padding: 0; font-size: 14px; }
-  .compare-card ul li { padding: 4px 0; }
-  .arch-diagram { background: #f7f8fc; border-radius: 12px; padding: 24px; margin: 16px 0; text-align: center; }
-  .arch-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
-  .arch-box { background: white; border: 2px solid #3b5bdb; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #1a1a2e; min-width: 100px; text-align: center; }
-  .arch-box.driver { background: #0f3460; color: white; border-color: #0f3460; }
-  .arch-box.executor { background: #eef2ff; border-color: #3b5bdb; }
-  .arch-arrow { font-size: 20px; color: #6b7280; margin: 4px 0; }
-  .arch-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
-  .practice-box { background: linear-gradient(135deg, #f0fdf4, #d1fae5); border: 1.5px solid #6ee7b7; border-radius: 12px; padding: 20px 24px; margin-top: 8px; }
-  .practice-box h4 { color: #065f46; font-size: 1rem; margin-bottom: 10px; }
-  .practice-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 14px; }
-  .practice-item .icon { font-size: 18px; flex-shrink: 0; }
-  .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
-  .term-card { background: white; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px; }
-  .term-card .term-name { font-weight: 700; color: #0f3460; font-size: 15px; margin-bottom: 4px; }
-  .term-card .term-en { font-size: 11px; color: #9ca3af; margin-bottom: 8px; }
-  .term-card .term-def { font-size: 13px; color: #374151; }
-  .summary-box { background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 14px; padding: 22px 28px; text-align: center; font-size: 1.05rem; font-weight: 600; line-height: 1.6; }
-  .summary-box .emoji { font-size: 1.5rem; display: block; margin-bottom: 8px; }
-  .quiz-item { background: #f9fafb; border-radius: 14px; padding: 22px; margin-bottom: 20px; border: 1.5px solid #e5e7eb; }
-  .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
-  .num { background: #0f3460; color: white; font-size: 13px; font-weight: 700; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-  .options { display: flex; flex-direction: column; gap: 8px; }
-  .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
-  .option:hover { border-color:#3b5bdb; background:#eef2ff; }
-  .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
-  .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
-  .option.correct { border-color:#10b981; background:#d1fae5; }
-  .option.wrong { border-color:#ef4444; background:#fee2e2; }
-  .option.correct .opt-label { color:#10b981; }
-  .option.wrong .opt-label { color:#ef4444; }
-  .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
-  .num.o { background:#10b981; }
-  .num.x { background:#ef4444; }
-  .answer-box { display: none; background: #fffbeb; border: 1.5px solid #fbbf24; border-radius: 10px; padding: 14px 16px; margin-top: 12px; font-size: 14px; color: #92400e; line-height: 1.6; }
-  .answer-box.show { display: block; }
-  .quiz-submit-area { text-align: center; margin-top: 24px; }
-  .submit-btn { background: #FF3621; color: white; border: none; padding: 14px 40px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background .2s; }
-  .submit-btn:hover { background: #e02d18; }
-  .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-  #scoreBar { display: none; background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
-  #scoreBar.show { display: block; }
-  #scoreNum { font-size: 2.5rem; font-weight: 800; color: #FF3621; }
-  #scoreMsg { font-size: 1.1rem; margin-top: 6px; }
-  .review-item { margin-bottom: 24px; }
-  .review-q { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 10px; display: flex; gap: 8px; }
-  .review-num { background: #3b5bdb; color: white; width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
-  .review-input { width: 100%; min-height: 80px; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical; background: white; color: #1a1a2e; margin-bottom: 8px; }
-  .review-input:focus { outline: none; border-color: #3b5bdb; }
-  .toggle-btn { background: white; border: 1.5px solid #3b5bdb; color: #3b5bdb; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
-  .toggle-btn:hover { background: #eef2ff; }
-  .model-answer { display: none; background: #f0fdf4; border: 1.5px solid #6ee7b7; border-radius: 10px; padding: 14px 16px; margin-top: 8px; font-size: 14px; color: #065f46; line-height: 1.6; }
-  .model-answer.show { display: block; }
-  footer { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; text-align: center; padding: 32px 24px; margin-top: 48px; }
-  footer .next-label { font-size: 12px; opacity: 0.6; margin-bottom: 6px; letter-spacing: 1px; }
-  footer .next-topic { font-size: 1.1rem; font-weight: 700; }
-  footer .next-topic span { color: #FF3621; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 4 — Databricks Notebook과 클러스터</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* Notebook 셀 스타일 */
+    .notebook-demo { background: #1e1e2e; border-radius: 12px; padding: 4px; margin: 20px 0; overflow: hidden; }
+    .nb-toolbar { background: #2d2d44; padding: 8px 14px; display: flex; align-items: center; gap: 10px; border-radius: 8px 8px 0 0; }
+    .nb-toolbar span { font-size: 12px; color: #a0aec0; }
+    .nb-lang { background: #FF3621; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+    .nb-cell { padding: 14px 18px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; color: #e2e8f0; line-height: 1.7; }
+    .nb-cell .kw  { color: #c792ea; } /* keyword */
+    .nb-cell .fn  { color: #82aaff; } /* function */
+    .nb-cell .str { color: #c3e88d; } /* string */
+    .nb-cell .cm  { color: #546e7a; } /* comment */
+    .nb-output { background: #f8fafc; border-top: 1px solid #334155; padding: 10px 18px; font-size: 13px; color: #374151; }
+
+    /* 클러스터 구조도 */
+    .cluster-diagram { margin: 20px 0; }
+    .cluster-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .cluster-box { border-radius: 12px; padding: 14px 20px; font-size: 13px; font-weight: 600; text-align: center; min-width: 130px; }
+    .cluster-box.driver { background: #fff7ed; border: 2px solid #fb923c; color: #9a3412; }
+    .cluster-box.worker { background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e40af; }
+    .cluster-box .cb-title { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+    .cluster-box .cb-desc  { font-size: 11px; font-weight: 400; color: inherit; opacity: 0.8; }
+    .cluster-arrow { font-size: 20px; color: var(--muted); }
+
+    /* 매직 커맨드 테이블 */
+    .magic-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .magic-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; font-weight: 600; }
+    .magic-table th:first-child { border-radius: 8px 0 0 0; }
+    .magic-table th:last-child  { border-radius: 0 8px 0 0; }
+    .magic-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #374151; }
+    .magic-table tr:last-child td { border-bottom: none; }
+    .magic-table tr:nth-child(even) td { background: #f9fafb; }
+    .magic-cmd { font-family: monospace; background: #1a1a2e; color: #c3e88d; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+
+    /* 클러스터 타입 비교 */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    @media(max-width: 580px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-card { border-radius: 14px; padding: 20px; }
+    .compare-card.all-purpose { background: #eff6ff; border: 1.5px solid #93c5fd; }
+    .compare-card.job         { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .compare-card .c-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .compare-card.all-purpose .c-title { color: #1e40af; }
+    .compare-card.job         .c-title { color: #166534; }
+    .compare-card ul { font-size: 13px; color: #374151; padding-left: 18px; }
+    .compare-card ul li { margin-bottom: 6px; }
+
+    /* 기능 카드 */
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    @media(max-width: 580px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 14px; padding: 18px; }
+    .feature-card .f-icon { font-size: 28px; margin-bottom: 8px; }
+    .feature-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .feature-card p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* 용어 카드 */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+    .term-card { background: #fafafa; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-word { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .term-card .t-def  { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    /* 한줄요약 */
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; margin: 20px 0; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px; }
+    .summary-box .s-text  { font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .summary-box .s-text span { color: #FFA500; }
+
+    /* 퀴즈 */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong   { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong   .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o  { background:#10b981; }
+    .num.x  { background:#ef4444; }
+
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* 복습 */
+    .review-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .review-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+    .review-num { width: 28px; height: 28px; background: #6b7280; color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px; color: var(--text); }
+    textarea:focus { outline: none; border-color: var(--accent); }
+    .answer-toggle { background: none; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: all .2s; }
+    .answer-toggle:hover { background: #eef2ff; }
+    .model-answer { display: none; margin-top: 10px; padding: 14px 16px; background: #eff6ff; border-radius: 10px; font-size: 13px; color: #1e40af; line-height: 1.7; border: 1px solid #93c5fd; }
+    .model-answer.show { display: block; }
+
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 18px; font-weight: 700; color: #FFA500; }
+    .footer-card p { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #a0aec0; font-size: 13px; text-decoration: none; margin-top: 16px; transition: color .2s; }
+    .back-link:hover { color: white; }
+  </style>
 </head>
 <body>
-<header>
-  <div class="day-badge">DAY 4</div>
-  <h1>Spark란? 왜 빠른가?</h1>
-  <p>대용량 데이터를 번개처럼 처리하는 분산 처리 엔진의 비밀</p>
-</header>
-<div class="container">
-  <div class="section">
-    <div class="section-title">📖 개념 설명</div>
-    <div class="intro-box">
-      <strong>왜 Spark가 필요한가?</strong><br>
-      데이터가 수백 GB, 수 TB를 넘어가면 일반 컴퓨터 한 대로는 처리 속도가 너무 느립니다. 예전 Hadoop MapReduce는 분산 처리를 지원했지만, 모든 중간 결과를 디스크에 썼다 읽어서 속도가 너무 느렸습니다. <strong>Apache Spark</strong>는 이 문제를 "메모리 우선 처리"로 해결하여, 같은 작업을 최대 100배 빠르게 수행합니다.
-    </div>
-    <div class="concept-block">
-      <h3>🔥 Spark란 무엇인가?</h3>
-      <p>Apache Spark는 대규모 데이터를 여러 컴퓨터(노드)에 나눠서 동시에 처리하는 <strong>오픈소스 분산 컴퓨팅 엔진</strong>입니다. 2009년 UC Berkeley에서 탄생했으며, SQL, 머신러닝, 스트리밍, 그래프 처리 등 다양한 작업을 하나의 통합 엔진에서 수행할 수 있습니다.</p>
-      <div class="analogy-box">💡 <strong>비유:</strong> 주방장(Driver)이 요리사 10명(Executor)에게 역할을 나눠주면 훨씬 빠르게 완성됩니다. Spark도 이처럼 "작업 쪼개기 → 병렬 실행 → 결과 합치기"를 자동으로 처리합니다.</div>
-    </div>
-    <div class="concept-block">
-      <h3>⚡ 왜 빠른가? — 핵심 이유 3가지</h3>
-      <p><strong>① 인메모리(In-Memory) 처리:</strong> Hadoop이 중간 결과를 매번 디스크에 저장하는 것과 달리, Spark는 중간 결과를 RAM에 올려두고 처리합니다.</p>
-      <p style="margin-top:12px"><strong>② 지연 평가(Lazy Evaluation):</strong> 모든 변환(Transformation) 명령을 모아뒀다가, 실제 결과가 필요한 순간(Action)에 한꺼번에 최적화된 실행 계획을 세워 처리합니다.</p>
-      <p style="margin-top:12px"><strong>③ DAG(방향성 비순환 그래프) 실행 계획:</strong> Catalyst 최적화 엔진이 최적 실행 순서를 자동으로 계산합니다.</p>
-    </div>
-    <div class="concept-block">
-      <h3>🏗️ Spark 아키텍처 — Driver와 Executor</h3>
-      <div class="arch-diagram">
-        <div class="arch-row"><div class="arch-box driver">Driver<br><small>작업 계획·조율</small></div></div>
-        <div class="arch-arrow">↓ 작업 분배</div>
-        <div class="arch-row">
-          <div class="arch-box executor">Executor 1<br><small>데이터 처리</small></div>
-          <div class="arch-box executor">Executor 2<br><small>데이터 처리</small></div>
-          <div class="arch-box executor">Executor 3<br><small>데이터 처리</small></div>
-        </div>
-        <div class="arch-arrow">↑ 결과 반환</div>
-        <div class="arch-label">각 Executor는 독립된 서버(노드)에서 병렬 실행 → 합산하여 최종 결과 반환</div>
-      </div>
-    </div>
-    <div class="concept-block">
-      <h3>📊 RDD, DataFrame, Dataset</h3>
-      <p><strong>RDD(Resilient Distributed Dataset)</strong>는 Spark의 가장 기본 단위로, 여러 노드에 분산된 불변 데이터 컬렉션입니다. <strong>DataFrame</strong>은 SQL처럼 다룰 수 있는 테이블 구조로 가장 많이 사용됩니다.</p>
-      <div class="analogy-box">💡 RDD는 "정렬되지 않은 데이터 더미", DataFrame은 "엑셀 시트처럼 정돈된 테이블"입니다.</div>
-    </div>
-    <div class="concept-block">
-      <h3>🐍 PySpark — Python으로 Spark 쓰기</h3>
-      <p>PySpark를 사용하면 평소 쓰던 Python 문법 그대로 수 TB의 데이터를 분산 처리할 수 있습니다. Databricks Notebook에서는 PySpark가 기본으로 지원됩니다.</p>
-    </div>
-    <div class="concept-block">
-      <h3>🔄 Transformation vs Action</h3>
-      <p><strong>Transformation</strong>(filter, select, groupBy 등)은 지연 평가 대상으로 즉시 실행하지 않습니다. <strong>Action</strong>(show, count, collect 등)이 호출될 때 한꺼번에 최적화되어 실행됩니다.</p>
-    </div>
-  </div>
 
-  <div class="section">
-    <div class="section-title">⚖️ Hadoop MapReduce vs Apache Spark</div>
-    <div class="compare-grid">
-      <div class="compare-card old">
-        <h4>🐘 Hadoop MapReduce</h4>
-        <ul>
-          <li>중간 결과를 디스크에 저장</li>
-          <li>반복 계산에 매우 느림</li>
-          <li>배치 처리 전용</li>
-          <li>머신러닝 지원 어려움</li>
-        </ul>
-      </div>
-      <div class="compare-card new">
-        <h4>⚡ Apache Spark</h4>
-        <ul>
-          <li>중간 결과를 메모리에 유지</li>
-          <li>반복 계산 최대 100배 빠름</li>
-          <li>배치 + 스트리밍 모두 지원</li>
-          <li>MLlib으로 ML 내장 지원</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">🏭 고분자제품기술팀 실무 적용 예시</div>
-    <div class="practice-box">
-      <h4>팀에서 Spark를 쓰면 이런 것들이 가능해집니다</h4>
-      <div class="practice-item"><span class="icon">🔬</span><div>PP·PE·EAA 원료별 물성 데이터(DSC, TGA, MFI 등) 수십만 건을 <strong>초 단위에 필터·집계</strong>할 수 있습니다.</div></div>
-      <div class="practice-item"><span class="icon">📋</span><div>CPP 필름의 투명도·충격강도·열접착 온도를 배합 조건별로 비교할 때, PySpark DataFrame으로 <strong>다차원 조건 필터링과 통계 요약을 자동화</strong>할 수 있습니다.</div></div>
-      <div class="practice-item"><span class="icon">⚙️</span><div>압출코팅 PP 생산 데이터를 Spark Streaming으로 <strong>이상치를 즉시 감지</strong>하는 파이프라인을 구성할 수 있습니다.</div></div>
-      <div class="practice-item"><span class="icon">🤖</span><div>신규 배합 후보를 ML로 예측할 때, Spark MLlib으로 <strong>대용량 실험 데이터 전처리 파이프라인</strong>을 구축할 수 있습니다.</div></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📌 핵심 용어 카드</div>
-    <div class="term-grid">
-      <div class="term-card"><div class="term-name">인메모리 처리</div><div class="term-en">In-Memory Processing</div><div class="term-def">중간 결과를 디스크 대신 RAM에 저장하여 처리 속도를 획기적으로 높이는 방식</div></div>
-      <div class="term-card"><div class="term-name">지연 평가</div><div class="term-en">Lazy Evaluation</div><div class="term-def">Transformation을 즉시 실행하지 않고, Action이 호출될 때 한꺼번에 최적화하여 실행</div></div>
-      <div class="term-card"><div class="term-name">RDD</div><div class="term-en">Resilient Distributed Dataset</div><div class="term-def">Spark의 기본 데이터 구조. 여러 노드에 분산된 불변 데이터 컬렉션</div></div>
-      <div class="term-card"><div class="term-name">PySpark</div><div class="term-en">PySpark</div><div class="term-def">Python 언어로 Apache Spark를 사용할 수 있게 해주는 공식 API</div></div>
-      <div class="term-card"><div class="term-name">DAG</div><div class="term-en">Directed Acyclic Graph</div><div class="term-def">Spark가 작업 실행 순서를 최적화하기 위해 구성하는 실행 계획 그래프</div></div>
-    </div>
-  </div>
-
-  <div class="summary-box">
-    <span class="emoji">⚡</span>
-    Spark는 <strong>메모리 우선 분산 처리 + 지연 평가 최적화</strong>로 Hadoop 대비 최대 100배 빠른 대용량 데이터 처리 엔진이며,<br>Databricks는 이 Spark를 클러스터 설정 없이 바로 쓸 수 있게 해줍니다.
-  </div>
-
-  <div class="section" style="margin-top:28px">
-    <div class="section-title">🧠 오늘의 퀴즈 — 5문제</div>
-    <div class="quiz-item" data-answer="1">
-      <div class="quiz-q"><span class="num">1</span>Spark가 Hadoop MapReduce 대비 최대 100배 빠른 핵심 이유는?</div>
-      <div class="options">
-        <button class="option" data-idx="0"><span class="opt-label">①</span> 더 많은 CPU 코어를 사용하기 때문에</button>
-        <button class="option" data-idx="1"><span class="opt-label">②</span> 중간 결과를 디스크 대신 메모리(RAM)에 저장하기 때문에</button>
-        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 압축해서 저장하기 때문에</button>
-        <button class="option" data-idx="3"><span class="opt-label">④</span> 클라우드에서만 실행되기 때문에</button>
-      </div>
-      <div class="answer-box"><strong>정답: ②</strong><br>Spark의 핵심은 인메모리(In-Memory) 처리입니다. RAM이 디스크보다 수백~수천 배 빠르기 때문에 속도 차이가 극적으로 납니다.</div>
-    </div>
-    <div class="quiz-item" data-answer="1">
-      <div class="quiz-q"><span class="num">2</span>Spark에서 여러 노드에 분산 저장되는 불변의 기본 데이터 컬렉션은?</div>
-      <div class="options">
-        <button class="option" data-idx="0"><span class="opt-label">①</span> DataFrame</button>
-        <button class="option" data-idx="1"><span class="opt-label">②</span> RDD (Resilient Distributed Dataset)</button>
-        <button class="option" data-idx="2"><span class="opt-label">③</span> Dataset</button>
-        <button class="option" data-idx="3"><span class="opt-label">④</span> Table</button>
-      </div>
-      <div class="answer-box"><strong>정답: ②</strong><br>RDD는 Spark의 가장 기본적인 데이터 추상화입니다. Resilient(장애 복구), Distributed(분산 저장), Dataset(데이터 모음)을 의미합니다.</div>
-    </div>
-    <div class="quiz-item" data-answer="2">
-      <div class="quiz-q"><span class="num">3</span>Spark의 "지연 평가(Lazy Evaluation)"에 대한 설명으로 가장 올바른 것은?</div>
-      <div class="options">
-        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 느린 디스크에 우선 저장하는 방식이다</button>
-        <button class="option" data-idx="1"><span class="opt-label">②</span> 네트워크가 느릴 때 자동으로 대기하는 기능이다</button>
-        <button class="option" data-idx="2"><span class="opt-label">③</span> Transformation을 즉시 실행하지 않고, Action 호출 시 최적화하여 실행한다</button>
-        <button class="option" data-idx="3"><span class="opt-label">④</span> 학습 데이터가 부족할 때 모델 학습을 지연시키는 기술이다</button>
-      </div>
-      <div class="answer-box"><strong>정답: ③</strong><br>filter(), select() 같은 Transformation은 즉시 실행하지 않고, show(), count() 같은 Action이 호출될 때 최적 실행 계획(DAG)으로 한 번에 처리합니다.</div>
-    </div>
-    <div class="quiz-item" data-answer="1">
-      <div class="quiz-q"><span class="num">4</span>PySpark에 대한 설명으로 가장 올바른 것은?</div>
-      <div class="options">
-        <button class="option" data-idx="0"><span class="opt-label">①</span> Spark를 Java로만 사용할 수 있는 전용 API이다</button>
-        <button class="option" data-idx="1"><span class="opt-label">②</span> Python 문법으로 Spark의 분산 처리 기능을 사용할 수 있는 API이다</button>
-        <button class="option" data-idx="2"><span class="opt-label">③</span> 소규모 데이터(1GB 이하) 전용 Python 라이브러리이다</button>
-        <button class="option" data-idx="3"><span class="opt-label">④</span> Excel을 대체하는 Python 데이터 분석 도구이다</button>
-      </div>
-      <div class="answer-box"><strong>정답: ②</strong><br>PySpark는 Apache Spark의 Python API입니다. Databricks Notebook에서 기본으로 지원되어 별도 설치 없이 바로 사용할 수 있습니다.</div>
-    </div>
-    <div class="quiz-item" data-answer="2">
-      <div class="quiz-q"><span class="num">5</span>Databricks에서 Spark를 사용하는 가장 큰 장점은?</div>
-      <div class="options">
-        <button class="option" data-idx="0"><span class="opt-label">①</span> Spark 클러스터를 직접 설치하고 관리해야 해서 학습에 좋다</button>
-        <button class="option" data-idx="1"><span class="opt-label">②</span> Spark 코드를 반드시 Java로만 작성해야 한다</button>
-        <button class="option" data-idx="2"><span class="opt-label">③</span> 클러스터 관리 없이 Notebook에서 바로 Spark 코드를 실행할 수 있다</button>
-        <button class="option" data-idx="3"><span class="opt-label">④</span> 한 번에 1GB 이하의 소규모 데이터만 처리 가능하다</button>
-      </div>
-      <div class="answer-box"><strong>정답: ③</strong><br>Databricks는 Spark 클러스터 인프라를 완전히 관리해줍니다. 클러스터를 클릭 몇 번으로 생성하고 Notebook에서 바로 코드를 실행할 수 있습니다.</div>
-    </div>
-    <div class="quiz-submit-area">
-      <button class="submit-btn" id="submitBtn" onclick="checkAnswers()">채점하기</button>
-    </div>
-    <div id="scoreBar"><div id="scoreNum"></div><div id="scoreMsg"></div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📝 어제 배운 내용 복습 — Unity Catalog 구조 (Catalog > Schema > Table)</div>
-    <div class="review-item">
-      <div class="review-q"><span class="review-num">1</span>Unity Catalog의 3계층 구조(Catalog > Schema > Table)를 설명하고, 각 계층의 역할을 서술하세요.</div>
-      <textarea class="review-input" placeholder="답변을 입력하세요..."></textarea>
-      <button class="toggle-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer"><strong>Unity Catalog 3계층:</strong><br>• Catalog: 최상위 단위. 조직/사업 부문 수준의 네임스페이스. 예: polymer_dev, safety<br>• Schema: 두 번째 계층. 프로젝트나 도메인 단위. 예: polymer_dev.cpp_film<br>• Table: 실제 데이터가 저장되는 최하위 단위. Delta 테이블 등이 위치합니다.<br>이 3계층으로 데이터를 논리적으로 분리하고 각 계층에 접근 권한을 부여합니다.</div>
-    </div>
-    <div class="review-item">
-      <div class="review-q"><span class="review-num">2</span>Unity Catalog에서 접근 제어(Access Control)가 중요한 이유를 기업 환경과 연결하여 설명하세요.</div>
-      <textarea class="review-input" placeholder="답변을 입력하세요..."></textarea>
-      <button class="toggle-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">부서마다 접근해야 할 데이터가 다릅니다. 고분자제품기술팀은 물성 분석 데이터에 접근하지만 인사·재무 데이터는 불필요합니다. Unity Catalog로 민감 데이터 보호, 감사 로그(Audit Log)를 통한 접근 이력 추적, 실수로 인한 데이터 삭제·변조 방지가 가능합니다.</div>
-    </div>
-    <div class="review-item">
-      <div class="review-q"><span class="review-num">3</span>고분자제품기술팀의 데이터를 Unity Catalog로 관리한다면 구성 예시를 들어 설명하세요.</div>
-      <textarea class="review-input" placeholder="답변을 입력하세요..."></textarea>
-      <button class="toggle-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">Catalog: polymer_tech<br>├─ Schema: raw_data — 원료 입고 데이터, 생산 공정 로그 (Bronze)<br>├─ Schema: processed — 정제된 물성 분석 결과 (Silver)<br>├─ Schema: cpp_film — CPP 필름 물성·배합 데이터<br>├─ Schema: battery_pouch — 배터리 파우치용 PP 데이터<br>└─ Schema: extrusion_coating — 압출코팅 PP 공정 데이터</div>
-    </div>
-    <div class="review-item">
-      <div class="review-q"><span class="review-num">4</span>Delta Lake와 Unity Catalog의 관계를 설명하세요.</div>
-      <textarea class="review-input" placeholder="답변을 입력하세요..."></textarea>
-      <button class="toggle-btn" onclick="toggleAnswer(this)">모범답안 보기</button>
-      <div class="model-answer">Delta Lake는 데이터를 저장하는 파일 형식(스토리지 레이어)으로 ACID 트랜잭션, 버전 관리를 제공합니다. Unity Catalog는 그 데이터에 대한 메타데이터와 접근 제어를 관리하는 거버넌스 레이어입니다. Delta Lake가 "파일 창고"라면, Unity Catalog는 "창고 목록과 열쇠 관리 시스템"입니다.</div>
-    </div>
+<div class="hero">
+  <div class="badge">Day 4 · Databricks Notebook</div>
+  <h1>Databricks Notebook과 클러스터</h1>
+  <p>Python·SQL 실행 환경과 클러스터 유형 이해</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
   </div>
 </div>
 
-<footer>
-  <div class="next-label">NEXT SESSION</div>
-  <div class="next-topic">내일은 <span>Day 5 — Notebook 기초 사용법</span>을 배울 예정이에요! 🚀</div>
-</footer>
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">개념 설명</div>
+    <div class="body-text">
+
+      <h3>왜 Notebook이 필요한가?</h3>
+      <p>
+        데이터를 분석하다 보면 코드를 작성하고, 결과를 확인하고, 메모를 남기는 작업이 반복됩니다.
+        일반 코드 에디터에서는 이 과정이 파편화되어 있지만, <strong>Databricks Notebook</strong>은 코드·결과·설명을 한 화면에서 모두 다룰 수 있는 통합 작업 환경입니다.
+      </p>
+      <p>
+        PP·PE 물성 데이터를 탐색하거나, SQL로 배합 이력을 조회하거나, 시각화 그래프를 만들 때 모두 하나의 Notebook 안에서 처리할 수 있습니다.
+        결과물을 팀원과 공유하거나 자동 실행 파이프라인으로 만드는 것도 간단합니다.
+      </p>
+
+      <h3>Notebook의 구조 — 셀(Cell) 기반</h3>
+      <p>
+        Notebook은 <strong>셀(Cell)</strong>이라는 단위로 구성됩니다. 셀 하나에 코드(또는 텍스트)를 쓰고 실행하면, 그 아래에 결과가 바로 출력됩니다.
+        셀은 독립적으로 실행할 수도 있고, 전체를 순서대로 실행할 수도 있습니다.
+      </p>
+
+      <div class="notebook-demo">
+        <div class="nb-toolbar">
+          <span class="nb-lang">Python</span>
+          <span>셀 1 — 데이터 로드</span>
+        </div>
+        <div class="nb-cell">
+<span class="cm"># PP 물성 데이터 로드</span><br>
+df = spark.read.<span class="fn">table</span>(<span class="str">"polymer_tech.film_quality.pp_properties"</span>)<br>
+df.<span class="fn">show</span>(5)
+        </div>
+        <div class="nb-output">
+          ✅ 출력: 테이블 미리보기 (5행)이 바로 아래에 표시됩니다
+        </div>
+        <div class="nb-toolbar" style="border-radius:0;">
+          <span class="nb-lang" style="background:#3b5bdb;">SQL</span>
+          <span>셀 2 — SQL로 집계</span>
+        </div>
+        <div class="nb-cell">
+<span class="kw">%sql</span><br>
+<span class="kw">SELECT</span> grade, <span class="fn">AVG</span>(tensile_strength) <span class="kw">AS</span> avg_strength<br>
+<span class="kw">FROM</span> polymer_tech.film_quality.pp_properties<br>
+<span class="kw">GROUP BY</span> grade <span class="kw">ORDER BY</span> avg_strength <span class="kw">DESC</span>;
+        </div>
+        <div class="nb-output">
+          ✅ 출력: 바 차트 또는 테이블이 바로 아래에 렌더링됩니다
+        </div>
+      </div>
+
+      <h3>매직 커맨드 (Magic Commands)</h3>
+      <p>
+        셀 첫 줄에 <strong>매직 커맨드</strong>를 쓰면 해당 셀의 실행 언어를 즉시 전환할 수 있습니다.
+        기본 언어가 Python이더라도 특정 셀만 SQL로 실행하거나, 마크다운 문서를 렌더링할 수 있습니다.
+      </p>
+
+      <table class="magic-table">
+        <thead>
+          <tr><th>커맨드</th><th>기능</th><th>활용 예시</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="magic-cmd">%python</span></td><td>Python으로 셀 실행</td><td>데이터 처리, 시각화, ML 모델링</td></tr>
+          <tr><td><span class="magic-cmd">%sql</span></td><td>SQL로 셀 실행</td><td>테이블 조회, 집계, 데이터 탐색</td></tr>
+          <tr><td><span class="magic-cmd">%md</span></td><td>마크다운 텍스트 렌더링</td><td>분석 보고서 설명, 제목, 표</td></tr>
+          <tr><td><span class="magic-cmd">%scala</span></td><td>Scala로 셀 실행</td><td>고성능 Spark 작업 (고급 사용자)</td></tr>
+          <tr><td><span class="magic-cmd">%sh</span></td><td>쉘 명령어 실행</td><td>파일 확인, 패키지 설치</td></tr>
+          <tr><td><span class="magic-cmd">%run</span></td><td>다른 Notebook 실행</td><td>공통 함수 Notebook 불러오기</td></tr>
+        </tbody>
+      </table>
+
+      <h3>클러스터(Cluster)란?</h3>
+      <p>
+        Notebook의 코드는 <strong>클러스터</strong>라는 컴퓨팅 자원 위에서 실행됩니다.
+        클러스터는 여러 대의 가상 서버(VM)가 묶인 집합으로, Notebook을 실행하기 전에 반드시 클러스터에 연결해야 합니다.
+      </p>
+      <p>
+        클러스터는 <strong>Driver 노드</strong> 1개와 <strong>Worker 노드</strong> 여러 개로 구성됩니다.
+        Driver는 작업 전체를 지휘하고, Worker들은 실제 데이터를 나눠서 처리합니다.
+      </p>
+
+      <div class="cluster-diagram">
+        <div class="cluster-row">
+          <div class="cluster-box driver">
+            <div class="cb-title">🎬 Driver 노드</div>
+            <div class="cb-desc">작업 계획·조율·결과 수집<br>Notebook과 직접 통신</div>
+          </div>
+        </div>
+        <div class="cluster-row">
+          <div class="cluster-arrow">↓ 작업 분배</div>
+        </div>
+        <div class="cluster-row">
+          <div class="cluster-box worker">
+            <div class="cb-title">⚙️ Worker 1</div>
+            <div class="cb-desc">데이터 파티션 A 처리</div>
+          </div>
+          <div class="cluster-box worker">
+            <div class="cb-title">⚙️ Worker 2</div>
+            <div class="cb-desc">데이터 파티션 B 처리</div>
+          </div>
+          <div class="cluster-box worker">
+            <div class="cb-title">⚙️ Worker 3</div>
+            <div class="cb-desc">데이터 파티션 C 처리</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>두 가지 클러스터 유형</h3>
+      <div class="compare-grid">
+        <div class="compare-card all-purpose">
+          <div class="c-title">🔵 All-Purpose 클러스터</div>
+          <ul>
+            <li>Notebook 대화형 분석용</li>
+            <li>여러 사람이 동시에 연결 가능</li>
+            <li>수동으로 시작/종료</li>
+            <li>탐색적 분석·개발 단계에 최적</li>
+            <li>비용: 상시 실행 시 비쌀 수 있음</li>
+          </ul>
+        </div>
+        <div class="compare-card job">
+          <div class="c-title">🟢 Job 클러스터</div>
+          <ul>
+            <li>자동화 파이프라인 실행 전용</li>
+            <li>작업 시작 시 자동 생성</li>
+            <li>작업 완료 후 자동 종료</li>
+            <li>스케줄 배치 작업에 최적</li>
+            <li>비용: 사용한 만큼만 과금</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Notebook의 주요 기능</h3>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="f-icon">🔗</div>
+          <h4>버전 관리 연동</h4>
+          <p>GitHub·Azure DevOps와 연동해 Notebook 변경 이력을 관리할 수 있습니다. 코드 리뷰와 협업이 쉬워집니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">📊</div>
+          <h4>내장 시각화</h4>
+          <p>SQL 결과나 DataFrame을 별도 코드 없이 바 차트·라인 차트·산점도 등으로 즉시 시각화할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🤝</div>
+          <h4>실시간 공동 편집</h4>
+          <p>Google Docs처럼 여러 사람이 동시에 같은 Notebook을 편집할 수 있습니다. 팀 협업에 최적화되어 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">⏰</div>
+          <h4>스케줄 실행</h4>
+          <p>Notebook을 Job으로 등록하면 매일·매주 특정 시간에 자동으로 실행됩니다. 반복 보고서 자동화에 유용합니다.</p>
+        </div>
+      </div>
+
+      <div class="highlight">
+        💡 <strong>실무 팁:</strong> 클러스터는 켜두는 동안 비용이 발생합니다. 분석이 끝나면 클러스터를 종료(Terminate)하는 습관을 들이거나, <strong>자동 종료(Auto Termination)</strong> 시간을 설정해두세요.
+      </div>
+
+      <h3>고분자제품기술팀에서의 활용</h3>
+      <p>
+        팀에서는 Notebook을 활용해 PP·EAA 물성 데이터를 탐색하고 시각화할 수 있습니다.
+        예를 들어 %python 셀에서 matplotlib으로 인장강도 분포 그래프를 그리고, %sql 셀에서 특정 조건의 배합 레코드를 조회하는 작업을 하나의 Notebook 문서 안에 정리할 수 있습니다.
+        완성된 Notebook을 팀 내에 공유하면 분석 과정과 결론을 함께 전달할 수 있어 기술 보고서 대용으로도 활용 가능합니다.
+      </p>
+
+    </div>
+
+    <!-- 용어 카드 -->
+    <div class="section-title" style="margin-top:28px;">핵심 용어</div>
+    <div class="term-grid">
+      <div class="term-card">
+        <div class="t-word">셀 (Cell)</div>
+        <div class="t-def">Notebook의 기본 실행 단위. 코드 또는 마크다운 텍스트를 담고, 독립 실행이 가능합니다.</div>
+      </div>
+      <div class="term-card">
+        <div class="t-word">매직 커맨드</div>
+        <div class="t-def">셀 첫 줄에 쓰는 특수 명령어(%sql, %md 등). 해당 셀의 실행 언어나 동작을 전환합니다.</div>
+      </div>
+      <div class="term-card">
+        <div class="t-word">클러스터 (Cluster)</div>
+        <div class="t-def">Notebook 코드가 실행되는 분산 컴퓨팅 자원. Driver + Worker 노드로 구성됩니다.</div>
+      </div>
+      <div class="term-card">
+        <div class="t-word">Driver 노드</div>
+        <div class="t-def">클러스터의 중앙 조율자. Spark 작업 계획을 세우고 Worker에게 분배하며 결과를 수집합니다.</div>
+      </div>
+      <div class="term-card">
+        <div class="t-word">Auto Termination</div>
+        <div class="t-def">일정 시간 사용이 없으면 클러스터를 자동 종료하는 기능. 비용 절감에 필수입니다.</div>
+      </div>
+    </div>
+
+    <!-- 한줄요약 -->
+    <div class="summary-box">
+      <div class="s-label">✨ 한 줄 요약</div>
+      <div class="s-text">
+        Databricks Notebook은 <span>Python·SQL·설명</span>을 한 화면에서 다루는 인터랙티브 작업 환경이고,<br>
+        <span>클러스터</span>는 그 코드를 실제로 실행하는 분산 컴퓨팅 자원입니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 퀴즈 -->
+  <div class="section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>Databricks Notebook의 기본 실행 단위는 무엇인가요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 파일(File)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 셀(Cell)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 블록(Block)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 페이지(Page)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Notebook은 셀(Cell) 단위로 구성됩니다. 각 셀을 독립적으로 실행하고 결과를 바로 확인할 수 있어 탐색적 분석에 매우 효율적입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">2</span>Python 기본 Notebook에서 특정 셀만 SQL로 실행하려면?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 셀 첫 줄에 %sql 을 입력한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 셀 마지막 줄에 #sql 을 입력한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Notebook 설정에서 언어를 변경한다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 새 Notebook을 SQL 전용으로 만든다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — 매직 커맨드 <code>%sql</code>을 셀 첫 줄에 입력하면, 해당 셀만 SQL로 실행됩니다. Notebook 전체 언어 설정을 바꾸지 않아도 됩니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">3</span>All-Purpose 클러스터와 Job 클러스터의 차이로 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> All-Purpose는 자동화 파이프라인 전용이다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Job 클러스터는 여러 팀원이 동시에 사용하기에 적합하다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> All-Purpose는 대화형 분석용, Job 클러스터는 자동화 배치 작업 전용이다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 두 클러스터는 기능이 동일하고 이름만 다르다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — All-Purpose는 Notebook 대화형 작업에 최적화되어 여러 사람이 동시 접속 가능하고, Job 클러스터는 스케줄 실행 등 자동화 전용으로 작업 완료 후 자동 종료됩니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">4</span>Databricks 클러스터에서 Driver 노드의 역할은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 디스크에 직접 저장하는 역할</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Spark 작업을 조율하고 Worker에게 분배하며 결과를 수집하는 역할</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 인터넷 네트워크 트래픽을 관리하는 역할</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 사용자 로그인 인증을 담당하는 역할</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Driver 노드는 Spark의 두뇌 역할로, 작업 계획을 세우고 Worker 노드에게 파티션을 분배하고 최종 결과를 수집해 Notebook에 반환합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">5</span>고분자 제품 개발 업무에서 Notebook 활용에 가장 적합한 시나리오는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 팀 회의 일정을 캘린더에 등록하는 작업</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> PP 물성 데이터를 Python으로 시각화하고 SQL로 배합 조건을 조회하는 탐색적 분석</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 사무용 워드 문서를 작성하는 작업</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 이메일을 자동으로 분류하고 보내는 작업</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Notebook은 코드·쿼리·시각화·설명을 한 화면에서 다루므로, 물성 데이터 탐색처럼 반복적으로 코드를 수정하며 결과를 확인하는 탐색적 분석에 가장 적합합니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum">0/5</div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- ③ 복습 — Day 3: Unity Catalog -->
+  <div class="section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — Unity Catalog 구조</div>
+
+    <div class="review-item">
+      <div class="review-q">
+        <span class="review-num">1</span>
+        Unity Catalog의 3단계 계층 구조를 순서대로 쓰고, 각 계층이 무엇을 담는지 설명해보세요.
+      </div>
+      <textarea placeholder="여기에 답변을 작성해보세요..."></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="model-answer">
+        Unity Catalog는 <strong>Catalog(카탈로그) → Schema(스키마) → Table(테이블)</strong> 3단계로 구성됩니다. Catalog는 최상위 컨테이너로 사업 단위나 환경(dev/prod)을 구분하고, Schema는 그 안의 주제나 팀 단위로 묶는 폴더 역할을 하며, Table/View는 실제 데이터가 담긴 최소 단위입니다.
+      </div>
+    </div>
+
+    <div class="review-item">
+      <div class="review-q">
+        <span class="review-num">2</span>
+        Unity Catalog에서 테이블에 접근할 때 사용하는 3단계 주소 형식을 예시와 함께 설명하세요.
+      </div>
+      <textarea placeholder="여기에 답변을 작성해보세요..."></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="model-answer">
+        <strong>catalog.schema.table</strong> 형식으로 점(.)을 구분자로 사용합니다.<br>
+        예: <code>SELECT * FROM polymer_tech.film_quality.thickness_measurements;</code><br>
+        <code>USE CATALOG</code>와 <code>USE SCHEMA</code>로 기본값을 설정하면 테이블명만으로도 접근 가능합니다.
+      </div>
+    </div>
+
+    <div class="review-item">
+      <div class="review-q">
+        <span class="review-num">3</span>
+        Unity Catalog의 권한 상속 구조를 설명하세요. Catalog 레벨에 권한을 부여하면 어떻게 되나요?
+      </div>
+      <textarea placeholder="여기에 답변을 작성해보세요..."></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="model-answer">
+        Unity Catalog의 권한은 <strong>계층적으로 상속</strong>됩니다. Catalog 레벨에 권한을 부여하면 그 안의 모든 Schema와 Table에 자동으로 적용됩니다. 반대로 특정 Schema나 Table에만 권한을 제한해 세밀하게 제어하는 것도 가능합니다.
+      </div>
+    </div>
+
+    <div class="review-item">
+      <div class="review-q">
+        <span class="review-num">4</span>
+        고분자제품기술팀에 Unity Catalog를 적용한다면 어떤 Catalog/Schema 구조를 만들 수 있을지 예시를 들어 설명하세요.
+      </div>
+      <textarea placeholder="여기에 답변을 작성해보세요..."></textarea>
+      <button class="answer-toggle" onclick="toggleAnswer(this)">모범답안 보기</button>
+      <div class="model-answer">
+        예시 구조:<br>
+        • Catalog: <code>polymer_tech</code><br>
+        • Schema: <code>cpp_retort</code> (레트로트용 CPP), <code>cpp_battery</code> (배터리 파우치용), <code>transparent_pp</code> (투명 PP)<br>
+        • Tables: <code>physical_properties</code> (물성 데이터), <code>formulation_records</code> (배합 이력), <code>quality_test</code> (품질 시험 결과)<br>
+        이 구조로 팀 내 누구나 필요한 데이터를 쉽게 찾고, Schema 단위로 접근 권한을 관리할 수 있습니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 5</div>
+    <h3>SQL로 데이터 조회하기</h3>
+    <p>SELECT 기초부터 필터, 집계, 조인까지 — 실제 PP 데이터로 실습해봐요!</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
 
 <script>
-const correctAnswers = [1,1,2,1,2];
-let selected = [null,null,null,null,null];
+const correctAnswers = [1, 0, 2, 1, 1];
+let selected = [null, null, null, null, null];
 let submitted = false;
+
 document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
   item.querySelectorAll('.option').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -297,10 +512,11 @@ document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
     });
   });
 });
+
 function checkAnswers() {
   if (submitted) return;
   const unanswered = selected.filter(s => s === null).length;
-  if (unanswered > 0) { alert('아직 ' + unanswered + '문제를 풀지 않았어요!'); return; }
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
   submitted = true;
   let score = 0;
   document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
@@ -310,7 +526,7 @@ function checkAnswers() {
     const numEl = item.querySelector('.num');
     numEl.classList.add('ox');
     if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
-    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    else           { numEl.classList.add('x'); numEl.textContent = 'X'; }
     item.querySelectorAll('.option').forEach(btn => {
       btn.disabled = true;
       const idx = parseInt(btn.dataset.idx);
@@ -320,15 +536,16 @@ function checkAnswers() {
     item.querySelector('.answer-box').classList.add('show');
   });
   document.getElementById('scoreBar').classList.add('show');
-  document.getElementById('scoreNum').textContent = score + '/5';
-  const msgs = ['개념 설명 다시 읽고 재도전해봐요!','괜찮아요, 처음엔 다 어려워요!','조금 더 읽어보고 재도전해봐요!','절반 이상 맞췄어요!','아주 잘했어요!','완벽해요!'];
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = { 5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!' };
   document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
   document.getElementById('submitBtn').disabled = true;
 }
+
 function toggleAnswer(btn) {
   const a = btn.nextElementSibling;
-  if (a.classList.contains('show')) { a.classList.remove('show'); btn.textContent='모범답안 보기'; }
-  else { a.classList.add('show'); btn.textContent='모범답안 닫기'; }
+  if (a.classList.contains('show')) { a.classList.remove('show'); btn.textContent = '모범답안 보기'; }
+  else { a.classList.add('show'); btn.textContent = '모범답안 닫기'; }
 }
 </script>
 </body>
