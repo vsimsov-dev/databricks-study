@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 5 — SQL로 데이터 조회하기</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* SQL 코드 블록 */
+    .sql-block { background: #1e1e2e; border-radius: 12px; overflow: hidden; margin: 20px 0; }
+    .sql-header { background: #2d2d44; padding: 8px 16px; display: flex; align-items: center; gap: 10px; }
+    .sql-lang { background: #3b82f6; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+    .sql-label { font-size: 12px; color: #a0aec0; }
+    .sql-code { padding: 16px 18px; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; color: #e2e8f0; line-height: 1.9; }
+    .sql-code .kw  { color: #c792ea; font-weight: 700; } /* keyword */
+    .sql-code .col { color: #82aaff; }                   /* column */
+    .sql-code .str { color: #c3e88d; }                   /* string */
+    .sql-code .num { color: #f78c6c; }                   /* number */
+    .sql-code .fn  { color: #ffcb6b; }                   /* function */
+    .sql-code .cm  { color: #546e7a; font-style: italic; } /* comment */
+    .sql-result { background: #f8fafc; border-top: 1px solid #334155; padding: 12px 18px; font-size: 13px; color: #374151; }
+    .sql-result table { border-collapse: collapse; width: 100%; }
+    .sql-result th { background: #e5e7eb; padding: 6px 12px; font-size: 12px; text-align: left; }
+    .sql-result td { padding: 5px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
+
+    /* SELECT 구조 다이어그램 */
+    .sql-anatomy { display: flex; flex-direction: column; gap: 6px; margin: 20px 0; font-family: monospace; }
+    .anat-row { display: flex; align-items: center; gap: 14px; }
+    .anat-kw { background: #4c1d95; color: #e9d5ff; padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 700; min-width: 100px; text-align: center; }
+    .anat-desc { font-size: 13px; color: #6b7280; font-family: 'Segoe UI', sans-serif; }
+    .anat-val { color: #1a1a2e; font-size: 14px; }
+
+    /* 조인 다이어그램 */
+    .join-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+    @media(max-width: 580px) { .join-grid { grid-template-columns: 1fr; } }
+    .join-card { border-radius: 12px; padding: 16px 18px; }
+    .join-card.inner { background: #eff6ff; border: 1.5px solid #93c5fd; }
+    .join-card.left  { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .join-card.right { background: #fdf4ff; border: 1.5px solid #d8b4fe; }
+    .join-card.full  { background: #fff7ed; border: 1.5px solid #fed7aa; }
+    .join-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .join-card.inner .join-title { color: #1e40af; }
+    .join-card.left  .join-title { color: #166534; }
+    .join-card.right .join-title { color: #7e22ce; }
+    .join-card.full  .join-title { color: #9a3412; }
+    .join-desc { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    /* 집계함수 테이블 */
+    .agg-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .agg-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; font-weight: 600; }
+    .agg-table th:first-child { border-radius: 8px 0 0 0; }
+    .agg-table th:last-child  { border-radius: 0 8px 0 0; }
+    .agg-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #374151; }
+    .agg-table tr:last-child td { border-bottom: none; }
+    .agg-table tr:nth-child(even) td { background: #f9fafb; }
+    .agg-fn { font-family: monospace; background: #1a1a2e; color: #ffcb6b; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+
+    /* 용어 카드 */
+    .term-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0; }
+    @media(max-width: 540px) { .term-grid { grid-template-columns: 1fr; } }
+    .term-card { background: #f9fafb; border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-name { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 6px; font-family: monospace; }
+    .term-card .t-desc { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    /* 한 줄 요약 */
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 20px 24px; margin-top: 28px; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; text-transform: uppercase; margin-bottom: 8px; }
+    .summary-box .s-text { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.6; }
+    .summary-box .s-text em { color: #FFA500; font-style: normal; }
+
+    /* 퀴즈 */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o { background:#10b981; }
+    .num.x { background:#ef4444; }
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* 푸터 */
+    .footer-card { background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); color: white; border-radius: 16px; padding: 32px; text-align: center; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; text-transform: uppercase; margin-bottom: 10px; }
+    .footer-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .footer-card p { color: #a0aec0; font-size: 14px; margin-bottom: 20px; }
+    .back-link { display: inline-block; background: rgba(255,255,255,.12); color: white; text-decoration: none; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .back-link:hover { background: rgba(255,255,255,.2); }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 5 · SQL</div>
+  <h1>SQL로 데이터 조회하기</h1>
+  <p>SELECT 기초부터 필터·집계·조인까지</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">오늘의 개념</div>
+    <div class="body-text">
+
+      <p>엑셀에서 데이터를 찾을 때 <strong>필터 버튼</strong>을 클릭하거나 VLOOKUP 함수를 쓰셨나요? SQL은 그 모든 작업을 <strong>언어 한 줄</strong>로 해결합니다. "이 조건에 맞는 데이터를 저 테이블에서 꺼내와" 라고 말하면 되는 것이죠.</p>
+      <p>Databricks에서는 Notebook 셀에 SQL을 바로 입력하거나, <strong>Databricks SQL</strong> 워크스페이스에서 쿼리를 실행할 수 있습니다. Delta Lake 위에 쌓인 수백만 행 데이터도 몇 초 안에 원하는 결과만 뽑아낼 수 있어요.</p>
+
+      <h3>① SELECT — "무엇을 보여줘?"</h3>
+      <p>SQL의 가장 기본 문장입니다. <strong>SELECT 컬럼명 FROM 테이블명</strong> 구조를 기억하세요. 영어 문장처럼 "이 테이블에서 이 컬럼들을 선택해" 라고 읽으면 됩니다.</p>
+
+      <div class="sql-block">
+        <div class="sql-header">
+          <span class="sql-lang">SQL</span>
+          <span class="sql-label">기본 SELECT</span>
+        </div>
+        <div class="sql-code">
+<span class="kw">SELECT</span> <span class="col">product_name</span>, <span class="col">grade</span>, <span class="col">melt_flow_index</span><br>
+<span class="kw">FROM</span>   <span class="col">polymer_products</span><br>
+<span class="kw">LIMIT</span>  <span class="num">10</span>;
+        </div>
+        <div class="sql-result">
+          <table>
+            <tr><th>product_name</th><th>grade</th><th>melt_flow_index</th></tr>
+            <tr><td>CPP-Retort-A1</td><td>Premium</td><td>2.1</td></tr>
+            <tr><td>CPP-Retort-A2</td><td>Standard</td><td>3.5</td></tr>
+            <tr><td>PP-Transparent-B1</td><td>Premium</td><td>1.8</td></tr>
+          </table>
+          <div style="font-size:11px;color:#9ca3af;margin-top:6px;">▶ 결과 미리보기 (상위 3행)</div>
+        </div>
+      </div>
+
+      <div class="sql-anatomy">
+        <div class="anat-row"><span class="anat-kw">SELECT</span><span class="anat-desc">→</span><span class="anat-val">어떤 컬럼을 가져올지 (쉼표로 구분, * 는 전체)</span></div>
+        <div class="anat-row"><span class="anat-kw">FROM</span><span class="anat-desc">→</span><span class="anat-val">어느 테이블에서 가져올지</span></div>
+        <div class="anat-row"><span class="anat-kw">WHERE</span><span class="anat-desc">→</span><span class="anat-val">어떤 조건에 맞는 행만 (필터링)</span></div>
+        <div class="anat-row"><span class="anat-kw">GROUP BY</span><span class="anat-desc">→</span><span class="anat-val">어떤 기준으로 묶을지 (집계)</span></div>
+        <div class="anat-row"><span class="anat-kw">ORDER BY</span><span class="anat-desc">→</span><span class="anat-val">어떤 순서로 정렬할지</span></div>
+      </div>
+
+      <h3>② WHERE — "이 조건에 맞는 것만 줘"</h3>
+      <p>WHERE 절은 엑셀의 필터와 같습니다. 조건을 여러 개 걸 때는 <strong>AND / OR</strong>를 사용하고, 범위는 <strong>BETWEEN</strong>, 목록 비교는 <strong>IN</strong>을 씁니다.</p>
+
+      <div class="sql-block">
+        <div class="sql-header">
+          <span class="sql-lang">SQL</span>
+          <span class="sql-label">WHERE 필터링</span>
+        </div>
+        <div class="sql-code">
+<span class="kw">SELECT</span> <span class="col">product_name</span>, <span class="col">melt_flow_index</span>, <span class="col">tensile_strength</span><br>
+<span class="kw">FROM</span>   <span class="col">polymer_products</span><br>
+<span class="kw">WHERE</span>  <span class="col">grade</span> = <span class="str">'Premium'</span><br>
+  <span class="kw">AND</span>  <span class="col">melt_flow_index</span> <span class="kw">BETWEEN</span> <span class="num">1.5</span> <span class="kw">AND</span> <span class="num">3.0</span><br>
+  <span class="kw">AND</span>  <span class="col">product_type</span> <span class="kw">IN</span> (<span class="str">'CPP'</span>, <span class="str">'透明PP'</span>);
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>💡 팀에서는 이렇게 씁니다</strong>
+        고분자 제품 개발 업무에서 MFI(용융흐름지수), 인장강도, 열봉합 강도 등 물성 데이터를 테이블로 관리한다면, WHERE로 특정 그레이드나 물성 범위에 해당하는 제품만 바로 뽑아볼 수 있습니다. 엑셀에서 수동으로 필터 클릭하던 작업이 쿼리 한 줄로 끝납니다.
+      </div>
+
+      <h3>③ GROUP BY + 집계 함수 — "묶어서 요약해줘"</h3>
+      <p>집계 함수는 여러 행을 하나의 요약값으로 만들어줍니다. <strong>GROUP BY</strong>로 그룹을 나누고, <strong>COUNT / SUM / AVG / MAX / MIN</strong> 등 집계 함수로 각 그룹의 통계를 냅니다.</p>
+
+      <table class="agg-table">
+        <tr><th>함수</th><th>역할</th><th>예시</th></tr>
+        <tr><td><span class="agg-fn">COUNT(*)</span></td><td>행 개수</td><td>제품 수 세기</td></tr>
+        <tr><td><span class="agg-fn">AVG(col)</span></td><td>평균값</td><td>평균 MFI</td></tr>
+        <tr><td><span class="agg-fn">SUM(col)</span></td><td>합계</td><td>총 생산량</td></tr>
+        <tr><td><span class="agg-fn">MAX(col)</span></td><td>최댓값</td><td>최대 인장강도</td></tr>
+        <tr><td><span class="agg-fn">MIN(col)</span></td><td>최솟값</td><td>최소 두께</td></tr>
+      </table>
+
+      <div class="sql-block">
+        <div class="sql-header">
+          <span class="sql-lang">SQL</span>
+          <span class="sql-label">GROUP BY + 집계</span>
+        </div>
+        <div class="sql-code">
+<span class="cm">-- 제품 타입별 평균 MFI와 제품 수 조회</span><br>
+<span class="kw">SELECT</span>  <span class="col">product_type</span>,<br>
+        <span class="fn">COUNT</span>(<span class="col">*</span>)                    <span class="kw">AS</span> <span class="col">product_count</span>,<br>
+        <span class="fn">ROUND</span>(<span class="fn">AVG</span>(<span class="col">melt_flow_index</span>), <span class="num">2</span>) <span class="kw">AS</span> <span class="col">avg_mfi</span><br>
+<span class="kw">FROM</span>    <span class="col">polymer_products</span><br>
+<span class="kw">GROUP BY</span> <span class="col">product_type</span><br>
+<span class="kw">ORDER BY</span> <span class="col">avg_mfi</span> <span class="kw">DESC</span>;
+        </div>
+        <div class="sql-result">
+          <table>
+            <tr><th>product_type</th><th>product_count</th><th>avg_mfi</th></tr>
+            <tr><td>압출코팅PP</td><td>12</td><td>4.30</td></tr>
+            <tr><td>透明PP</td><td>9</td><td>2.85</td></tr>
+            <tr><td>CPP-Retort</td><td>15</td><td>2.10</td></tr>
+            <tr><td>배터리파우치</td><td>7</td><td>1.65</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <h3>④ JOIN — "두 테이블을 합쳐줘"</h3>
+      <p>JOIN은 서로 다른 테이블을 <strong>공통 키(key)</strong>로 연결합니다. 마치 엑셀의 VLOOKUP처럼요. 가장 많이 쓰는 것은 <strong>INNER JOIN</strong>(둘 다 있는 것만)과 <strong>LEFT JOIN</strong>(왼쪽 테이블 기준)입니다.</p>
+
+      <div class="join-grid">
+        <div class="join-card inner">
+          <div class="join-title">🔵 INNER JOIN</div>
+          <div class="join-desc">두 테이블 모두에 존재하는 행만 반환. 가장 일반적.</div>
+        </div>
+        <div class="join-card left">
+          <div class="join-title">🟢 LEFT JOIN</div>
+          <div class="join-desc">왼쪽 테이블 전체 + 오른쪽에 있으면 붙이고, 없으면 NULL.</div>
+        </div>
+        <div class="join-card right">
+          <div class="join-title">🟣 RIGHT JOIN</div>
+          <div class="join-desc">오른쪽 테이블 전체 + 왼쪽에 있으면 붙이고, 없으면 NULL.</div>
+        </div>
+        <div class="join-card full">
+          <div class="join-title">🟠 FULL OUTER JOIN</div>
+          <div class="join-desc">양쪽 모두 포함. 없는 쪽은 NULL로 채움.</div>
+        </div>
+      </div>
+
+      <div class="sql-block">
+        <div class="sql-header">
+          <span class="sql-lang">SQL</span>
+          <span class="sql-label">JOIN 예시</span>
+        </div>
+        <div class="sql-code">
+<span class="cm">-- 제품 정보와 테스트 결과 테이블 합치기</span><br>
+<span class="kw">SELECT</span>  p.<span class="col">product_name</span>,<br>
+        p.<span class="col">product_type</span>,<br>
+        t.<span class="col">test_date</span>,<br>
+        t.<span class="col">tensile_strength</span>,<br>
+        t.<span class="col">result</span><br>
+<span class="kw">FROM</span>    <span class="col">polymer_products</span> p<br>
+<span class="kw">INNER JOIN</span> <span class="col">quality_tests</span> t<br>
+        <span class="kw">ON</span> p.<span class="col">product_id</span> = t.<span class="col">product_id</span><br>
+<span class="kw">WHERE</span>   t.<span class="col">result</span> = <span class="str">'FAIL'</span><br>
+<span class="kw">ORDER BY</span> t.<span class="col">test_date</span> <span class="kw">DESC</span>;
+        </div>
+      </div>
+
+      <h3>⑤ 실무 활용 예시</h3>
+      <p>고분자 제품 개발 업무에서 SQL이 실제로 쓰일 수 있는 상황을 생각해볼게요. 레트로트용 CPP나 배터리 파우치용 소재처럼 물성 데이터가 많은 제품군은 테이블로 관리하면 효과적입니다.</p>
+      <div class="highlight">
+        📋 <strong>활용 시나리오:</strong> 지난 6개월간 레트로트 CPP 제품의 열봉합 강도 합격률을 제품 그레이드별로 비교하고 싶다면? — GROUP BY로 그레이드별 집계, WHERE로 기간 필터, JOIN으로 품질 테스트 테이블 연결하면 한 번에 가능합니다.
+      </div>
+
+      <!-- 핵심 용어 카드 -->
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="t-name">SELECT … FROM</div>
+          <div class="t-desc">SQL의 기본 구조. 테이블에서 원하는 컬럼을 선택한다.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-name">WHERE</div>
+          <div class="t-desc">행(Row) 필터링 조건. 조건에 맞는 데이터만 반환.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-name">GROUP BY</div>
+          <div class="t-desc">특정 컬럼 기준으로 행을 묶어 집계 함수와 함께 사용.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-name">JOIN</div>
+          <div class="t-desc">공통 키로 두 테이블을 연결. INNER / LEFT가 가장 흔함.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-name">HAVING</div>
+          <div class="t-desc">GROUP BY 이후 집계 결과에 조건을 거는 절. WHERE와 다름.</div>
+        </div>
+        <div class="term-card">
+          <div class="t-name">ALIAS (AS)</div>
+          <div class="t-desc">컬럼이나 테이블에 별명을 붙여 코드를 읽기 쉽게 만든다.</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-label">한 줄 요약</div>
+        <div class="s-text">SQL은 <em>SELECT(무엇을) → FROM(어디서) → WHERE(어떤 조건으로) → GROUP BY(어떻게 묶어서)</em> 순서로 원하는 데이터를 언어처럼 꺼내는 도구입니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section quiz-section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>SQL에서 특정 조건에 맞는 행만 필터링할 때 사용하는 절은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> GROUP BY</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> WHERE</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> ORDER BY</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> HAVING</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — WHERE 절은 테이블에서 조건에 맞는 행만 반환합니다. HAVING은 GROUP BY 이후 집계 결과에 조건을 거는 데 사용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">2</span>다음 중 GROUP BY와 함께 사용하는 집계 함수가 아닌 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> COUNT(*)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> AVG(col)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> WHERE col = 'A'</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> MAX(col)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — WHERE은 집계 함수가 아니라 필터링 절입니다. COUNT, AVG, MAX, MIN, SUM이 대표적인 집계 함수입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>두 테이블에 모두 존재하는 행만 반환하는 JOIN 종류는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> INNER JOIN</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> LEFT JOIN</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> RIGHT JOIN</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> FULL OUTER JOIN</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — INNER JOIN은 두 테이블에 공통으로 존재하는 행만 반환합니다. 가장 자주 사용하는 JOIN 유형입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>SQL에서 결과 행 수를 상위 N개로 제한할 때 사용하는 절은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> TOP</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> FILTER</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> ROWNUM</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> LIMIT</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — Databricks SQL(및 대부분의 현대 SQL)에서는 LIMIT N으로 반환 행 수를 제한합니다. 대용량 테이블 조회 시 LIMIT을 붙이는 습관이 중요합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">5</span>SELECT 문에서 컬럼이나 테이블에 별명을 붙이는 키워드는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> NAME</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> AS</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> RENAME</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> LABEL</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — AS 키워드로 컬럼이나 테이블에 별명(Alias)을 붙입니다. 예: SELECT AVG(mfi) AS avg_mfi</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- ③ 전날 복습 (Day 4) -->
+  <div class="section review-section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — Databricks Notebook과 클러스터</div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">1</span>Databricks Notebook에서 셀의 언어를 일시적으로 바꿀 때 사용하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 매직 커맨드 (%sql, %python 등)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 언어 설정 파일 수정</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 별도 Notebook 생성</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 클러스터 재시작</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — %sql, %python, %scala 등 매직 커맨드를 셀 첫 줄에 입력하면 해당 셀의 언어를 일시적으로 변경할 수 있습니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">2</span>Databricks 클러스터에서 작업을 조율하고 실행 계획을 수립하는 노드는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Worker Node</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Storage Node</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Driver Node</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Gateway Node</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — Driver Node(드라이버 노드)가 전체 작업을 조율하고 실행 계획을 수립합니다. Worker Node는 실제 데이터 처리 작업을 수행합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">3</span>반복적인 자동화 배치 작업에 적합하며, 작업 완료 후 자동으로 종료되는 클러스터 유형은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> All-Purpose 클러스터</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Job 클러스터</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> SQL 전용 클러스터</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 개발용 클러스터</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Job 클러스터는 특정 작업 실행을 위해 자동 생성되고, 작업 완료 후 자동으로 종료됩니다. All-Purpose 클러스터는 대화형 개발에 사용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">4</span>Notebook에서 파일 시스템을 조작하거나 셸 명령어를 실행할 때 사용하는 유틸리티는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> spark.util</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> %bash 전용 셀</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> dbfs.run()</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> dbutils</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — dbutils는 Databricks 유틸리티 라이브러리로, dbutils.fs(파일 시스템), dbutils.secrets(보안), dbutils.widgets(UI 위젯) 등 다양한 기능을 제공합니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtnR" onclick="checkReview()">복습 정답 확인하기 🔄</button>
+    <div class="score-bar" id="scoreBarR">
+      <div class="score-num" id="scoreNumR"></div>
+      <div class="score-msg" id="scoreMsgR"></div>
+    </div>
+  </div>
+
+  <!-- ④ 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 6</div>
+    <h3>Spark란? 왜 빠른가?</h3>
+    <p>분산 처리·인메모리·지연 실행의 비밀</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+  // ── 오늘의 퀴즈 ──
+  const correctAnswers = [1, 2, 0, 3, 1];
+  let selected = [null, null, null, null, null];
+  let submitted = false;
+
+  document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submitted) return;
+        item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selected[qIdx] = parseInt(btn.dataset.idx);
+      });
+    });
+  });
+
+  function checkAnswers() {
+    if (submitted) return;
+    const unanswered = selected.filter(s => s === null).length;
+    if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+    submitted = true;
+    let score = 0;
+    document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+      const correct = correctAnswers[qIdx];
+      const isCorrect = selected[qIdx] === correct;
+      if (isCorrect) score++;
+      const numEl = item.querySelector('.num');
+      numEl.classList.add('ox');
+      if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+      else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+      item.querySelectorAll('.option').forEach(btn => {
+        btn.disabled = true;
+        const idx = parseInt(btn.dataset.idx);
+        if (idx === correct) btn.classList.add('correct');
+        else if (idx === selected[qIdx]) btn.classList.add('wrong');
+      });
+      item.querySelector('.answer-box').classList.add('show');
+    });
+    document.getElementById('scoreBar').classList.add('show');
+    document.getElementById('scoreNum').textContent = `${score}/5`;
+    const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+    document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+    document.getElementById('submitBtn').disabled = true;
+  }
+
+  // ── 복습 퀴즈 ──
+  const correctReview = [0, 2, 1, 3];
+  let selectedR = [null, null, null, null];
+  let submittedR = false;
+
+  document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submittedR) return;
+        item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedR[qIdx] = parseInt(btn.dataset.idx);
+      });
+    });
+  });
+
+  function checkReview() {
+    if (submittedR) return;
+    const unanswered = selectedR.filter(s => s === null).length;
+    if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+    submittedR = true;
+    let score = 0;
+    document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+      const correct = correctReview[qIdx];
+      const isCorrect = selectedR[qIdx] === correct;
+      if (isCorrect) score++;
+      const numEl = item.querySelector('.num');
+      numEl.classList.add('ox');
+      if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+      else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+      item.querySelectorAll('.option').forEach(btn => {
+        btn.disabled = true;
+        const idx = parseInt(btn.dataset.idx);
+        if (idx === correct) btn.classList.add('correct');
+        else if (idx === selectedR[qIdx]) btn.classList.add('wrong');
+      });
+      item.querySelector('.answer-box').classList.add('show');
+    });
+    document.getElementById('scoreBarR').classList.add('show');
+    document.getElementById('scoreNumR').textContent = `${score}/4`;
+    const msgs = {4:'🏆 완벽해요!', 3:'🎉 잘 기억하고 있어요!', 2:'👍 절반 이상!', 1:'📚 어제 내용 한 번 더 읽어봐요', 0:'💪 괜찮아요, 다시 도전!'};
+    document.getElementById('scoreMsgR').textContent = msgs[score] || msgs[0];
+    document.getElementById('submitBtnR').disabled = true;
+  }
+</script>
+</body>
+</html>

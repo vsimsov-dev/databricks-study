@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -8,27 +8,14 @@
     :root { --primary: #FF3621; --bg: #f7f8fc; --card: #fff; --text: #1a1a2e; --muted: #6b7280; --border: #e5e7eb; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); }
-
-    .hero {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-      color: white; padding: 48px 32px; text-align: center;
-    }
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px; text-align: center; }
     .hero .logo { font-size: 40px; margin-bottom: 12px; }
     .hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
     .hero p { color: #a0aec0; font-size: 15px; }
     .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; }
-
     .container { max-width: 680px; margin: 0 auto; padding: 36px 20px 60px; }
-
     .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 16px; }
-
-    .day-card {
-      display: flex; align-items: center; gap: 16px;
-      background: var(--card); border-radius: 14px; padding: 18px 20px;
-      margin-bottom: 12px; text-decoration: none; color: var(--text);
-      box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1.5px solid var(--border);
-      transition: all .2s;
-    }
+    .day-card { display: flex; align-items: center; gap: 16px; background: var(--card); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; text-decoration: none; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.06); border: 1.5px solid var(--border); transition: all .2s; }
     .day-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(255,54,33,.12); transform: translateY(-1px); }
     .day-card.locked { opacity: .45; pointer-events: none; }
     .day-num { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); color: white; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -36,27 +23,25 @@
     .day-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
     .day-info p { font-size: 13px; color: var(--muted); }
     .day-arrow { margin-left: auto; color: var(--muted); font-size: 18px; }
-
     .coming { text-align: center; padding: 24px; color: var(--muted); font-size: 14px; }
     .coming span { display: block; font-size: 28px; margin-bottom: 8px; }
   </style>
 </head>
 <body>
-
 <div class="hero">
   <div class="logo">📊</div>
   <div class="badge">Databricks 입문 과정</div>
   <h1>매일 10분, Databricks 전문가 되기</h1>
   <p>매일 점심 12시에 새로운 강의가 업로드돼요</p>
 </div>
-
 <div class="container">
   <div class="section-title">강의 목록</div>
 
+  <!-- Day 1~5: 잠금 해제 -->
   <a class="day-card" href="day1.html">
     <div class="day-num">1</div>
     <div class="day-info">
-      <h3>Databricks와 레이크하우스 개념</h3>
+      <h3>Databricks란? (레이크하우스 개념)</h3>
       <p>데이터 웨어하우스 vs 레이크 vs 레이크하우스</p>
     </div>
     <div class="day-arrow">→</div>
@@ -75,7 +60,7 @@
     <div class="day-num">3</div>
     <div class="day-info">
       <h3>Unity Catalog 구조</h3>
-      <p>Catalog &gt; Schema &gt; Table 계층 이해</p>
+      <p>Catalog > Schema > Table 계층 이해</p>
     </div>
     <div class="day-arrow">→</div>
   </a>
@@ -89,20 +74,152 @@
     <div class="day-arrow">→</div>
   </a>
 
-  <div class="day-card locked">
+  <a class="day-card" href="day5.html">
     <div class="day-num">5</div>
     <div class="day-info">
       <h3>SQL로 데이터 조회하기</h3>
-      <p>SELECT 기초부터</p>
+      <p>SELECT 기초부터 필터·집계·조인까지</p>
+    </div>
+    <div class="day-arrow">→</div>
+  </a>
+
+  <!-- Day 6~20: 잠금 -->
+  <div class="day-card locked">
+    <div class="day-num">6</div>
+    <div class="day-info">
+      <h3>Spark란? 왜 빠른가?</h3>
+      <p>분산 처리·인메모리·지연 실행의 비밀</p>
     </div>
     <div class="day-arrow">🔒</div>
   </div>
 
-  <div class="coming">
-    <span>📅</span>
-    매일 새 강의가 추가돼요. 내일도 기대해주세요!
+  <div class="day-card locked">
+    <div class="day-num">7</div>
+    <div class="day-info">
+      <h3>데이터 타입: 정형·반정형·비정형</h3>
+      <p>CSV, JSON, 이미지, 영상 데이터 이해</p>
+    </div>
+    <div class="day-arrow">🔒</div>
   </div>
-</div>
 
+  <div class="day-card locked">
+    <div class="day-num">8</div>
+    <div class="day-info">
+      <h3>메달리온 아키텍처</h3>
+      <p>Bronze → Silver → Gold 단계별 데이터 정제</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">9</div>
+    <div class="day-info">
+      <h3>데이터 파이프라인 기초</h3>
+      <p>ETL·ELT와 Databricks Workflows</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">10</div>
+    <div class="day-info">
+      <h3>AI/ML 기초 — LLM과 파운데이션 모델</h3>
+      <p>거대언어모델의 작동 원리</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">11</div>
+    <div class="day-info">
+      <h3>RAG란? 엔터프라이즈에서 왜 쓰는가?</h3>
+      <p>검색 증강 생성으로 AI에 지식 주입하기</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">12</div>
+    <div class="day-info">
+      <h3>벡터 DB와 임베딩 개념</h3>
+      <p>의미 기반 검색의 핵심 기술</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">13</div>
+    <div class="day-info">
+      <h3>Genie (Text to SQL) 개념과 활용</h3>
+      <p>자연어로 데이터를 조회하는 AI 도구</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">14</div>
+    <div class="day-info">
+      <h3>AI 에이전트란?</h3>
+      <p>스스로 계획하고 실행하는 AI 시스템</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">15</div>
+    <div class="day-info">
+      <h3>MCP (Model Context Protocol) 개념</h3>
+      <p>AI 에이전트와 도구를 연결하는 표준</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">16</div>
+    <div class="day-info">
+      <h3>프롬프트 엔지니어링 기초</h3>
+      <p>AI를 잘 쓰기 위한 질문 설계 전략</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">17</div>
+    <div class="day-info">
+      <h3>MLflow 기초</h3>
+      <p>실험 추적과 모델 관리의 표준 도구</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">18</div>
+    <div class="day-info">
+      <h3>평가(Evaluation)와 모니터링의 중요성</h3>
+      <p>AI 품질을 측정하고 지키는 방법</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">19</div>
+    <div class="day-info">
+      <h3>Databricks 클러스터와 컴퓨트 심화</h3>
+      <p>비용 최적화와 오토스케일링 전략</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="day-card locked">
+    <div class="day-num">20</div>
+    <div class="day-info">
+      <h3>엔터프라이즈 AI 도입 전략 총정리</h3>
+      <p>20일 과정을 마무리하며</p>
+    </div>
+    <div class="day-arrow">🔒</div>
+  </div>
+
+  <div class="coming"><span>📅</span>매일 새 강의가 추가돼요. 내일도 기대해주세요!</div>
+</div>
 </body>
 </html>
