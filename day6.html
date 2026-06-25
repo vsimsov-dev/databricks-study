@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 6 — Spark란? 왜 빠른가?</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* Spark 아키텍처 다이어그램 */
+    .spark-diagram { margin: 24px 0; }
+    .spark-layer { border-radius: 12px; padding: 14px 20px; margin-bottom: 8px; font-size: 14px; }
+    .spark-layer.driver { background: #fff7ed; border: 2px solid #fb923c; }
+    .spark-layer.executor { background: #eff6ff; border: 1.5px solid #93c5fd; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .spark-layer.storage { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .spark-layer-title { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: #374151; }
+    .exec-box { background: white; border-radius: 8px; padding: 10px; text-align: center; font-size: 12px; border: 1px solid #bfdbfe; }
+    .exec-box .exec-name { font-weight: 700; color: #1e40af; margin-bottom: 4px; }
+    .exec-box .exec-detail { color: #6b7280; font-size: 11px; }
+    .spark-arrow { text-align: center; font-size: 20px; color: var(--muted); margin: 4px 0; }
+    @media(max-width:560px) { .spark-layer.executor { grid-template-columns: 1fr 1fr; } }
+
+    /* 비교 테이블 */
+    .compare-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+    .compare-table th { background: #1a1a2e; color: white; padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; }
+    .compare-table th:first-child { border-radius: 8px 0 0 0; }
+    .compare-table th:last-child  { border-radius: 0 8px 0 0; }
+    .compare-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: #374151; vertical-align: top; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: #f9fafb; }
+    .badge-fast { display: inline-block; background: #d1fae5; color: #065f46; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+    .badge-slow { display: inline-block; background: #fee2e2; color: #991b1b; border-radius: 6px; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+
+    /* 코드 블록 */
+    .code-block { background: #1e1e2e; border-radius: 12px; padding: 20px; margin: 16px 0; overflow-x: auto; }
+    .code-block pre { font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; color: #e2e8f0; line-height: 1.7; margin: 0; }
+    .code-block .kw  { color: #c792ea; }
+    .code-block .fn  { color: #82aaff; }
+    .code-block .str { color: #c3e88d; }
+    .code-block .cm  { color: #546e7a; }
+    .code-block .num { color: #f78c6c; }
+    .code-label { font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 8px; letter-spacing: 0.5px; }
+
+    /* 실행 단계 타임라인 */
+    .timeline { margin: 20px 0; }
+    .tl-item { display: flex; gap: 16px; margin-bottom: 20px; }
+    .tl-num { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .tl-body h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .tl-body p { font-size: 14px; color: #6b7280; }
+
+    /* 용어 카드 */
+    .term-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+    @media(max-width: 560px) { .term-grid { grid-template-columns: 1fr; } }
+    .term-card { border-radius: 12px; padding: 16px; background: #f8fafc; border: 1.5px solid var(--border); }
+    .term-card .term-name { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 6px; letter-spacing: 0.3px; }
+    .term-card .term-desc { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; margin-top: 28px; text-align: center; font-size: 16px; font-weight: 700; line-height: 1.7; }
+    .summary-box span { color: #FFA500; }
+
+    /* 퀴즈 */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o { background:#10b981; }
+    .num.x { background:#ef4444; }
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* 복습 섹션 구분 */
+    .review-section .num { background: #6b7280; }
+
+    /* 푸터 */
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 12px; }
+    .footer-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .footer-card p { color: #a0aec0; font-size: 14px; margin-bottom: 20px; }
+    .back-link { display: inline-block; margin-top: 16px; padding: 10px 24px; background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.2); color: white; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .back-link:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 6 · 분산처리 엔진</div>
+  <h1>Spark란? 왜 빠른가?</h1>
+  <p>분산 처리·인메모리·지연 실행의 비밀</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">오늘의 개념</div>
+    <div class="body-text">
+      <p>엑셀로 수백만 행의 데이터를 열면 컴퓨터가 멈춰버린 경험, 있으신가요? 고분자 제품 개발을 하다 보면 물성 측정 데이터, 압출 공정 로그, 시험 성적서 등 수많은 데이터가 쌓입니다. 이 데이터들이 수억 건으로 늘어나면 일반 도구로는 감당이 안 됩니다.</p>
+      <p><strong>Apache Spark</strong>는 이 문제를 해결하기 위해 탄생한 분산 처리 엔진입니다. 데이터를 여러 컴퓨터에 나눠서 동시에 처리하고, 결과를 메모리에 올려두기 때문에 전통적인 방식보다 수십~수백 배 빠릅니다. Databricks는 Spark를 핵심 엔진으로 사용하는 플랫폼이에요.</p>
+
+      <h3>🏭 비유: 공장 라인 vs 1인 작업</h3>
+      <p>기존 데이터 처리를 "혼자 100개 필름 롤을 검사하는 것"에 비유한다면, Spark는 "100명이 동시에 1개씩 나눠 검사하는 컨베이어 벨트 라인"입니다. 같은 작업이지만 속도가 완전히 달라지죠.</p>
+
+      <div class="spark-diagram">
+        <div class="spark-layer driver">
+          <div class="spark-layer-title">🚦 Driver (작업 지휘자)</div>
+          <div style="font-size:13px;color:#9a3412;">전체 작업 계획 수립 → Executor들에게 Task 배분 → 결과 수집</div>
+        </div>
+        <div class="spark-arrow">↕ 지시 & 결과</div>
+        <div class="spark-layer executor">
+          <div class="exec-box">
+            <div class="exec-name">Executor 1</div>
+            <div class="exec-detail">데이터 파티션 A 처리<br>메모리 캐시</div>
+          </div>
+          <div class="exec-box">
+            <div class="exec-name">Executor 2</div>
+            <div class="exec-detail">데이터 파티션 B 처리<br>메모리 캐시</div>
+          </div>
+          <div class="exec-box">
+            <div class="exec-name">Executor 3</div>
+            <div class="exec-detail">데이터 파티션 C 처리<br>메모리 캐시</div>
+          </div>
+        </div>
+        <div class="spark-arrow">↕ 읽기 / 쓰기</div>
+        <div class="spark-layer storage">
+          <div class="spark-layer-title">💾 데이터 저장소 (Delta Lake, S3, ADLS 등)</div>
+          <div style="font-size:13px;color:#166534;">원본 데이터 → 처리 결과 저장</div>
+        </div>
+      </div>
+
+      <h3>⚡ 비밀 1 — 인메모리(In-Memory) 처리</h3>
+      <p>전통적인 Hadoop MapReduce는 각 단계 결과를 <strong>디스크에 저장</strong>한 뒤 다음 단계를 실행했습니다. 디스크 I/O는 메모리 접근보다 약 100배 느립니다. Spark는 중간 결과를 <strong>메모리(RAM)에 유지</strong>하면서 연산을 이어가기 때문에 훨씬 빠릅니다.</p>
+      <div class="info-box">
+        <strong>🔬 고분자 업무 적용 예시</strong>
+        PP 필름의 인장강도·신율·열수축 등 물성 데이터를 수년치 분석할 때, 중간 필터링 결과를 매번 파일로 저장하지 않고 메모리에서 바로 다음 계산으로 넘기는 방식으로 분석 시간을 크게 줄일 수 있습니다.
+      </div>
+
+      <h3>🦋 비밀 2 — 지연 실행(Lazy Evaluation)</h3>
+      <p>Spark는 코드를 작성해도 즉시 실행하지 않습니다. 대신 "어떤 작업을 할 건지"의 <strong>실행 계획(Logical Plan)</strong>만 쌓아두다가, 실제 결과가 필요한 시점에 한 번에 최적화해서 실행합니다. 마치 배달 앱으로 여러 음식을 장바구니에 담다가 한 번에 주문하는 것과 같아요.</p>
+      <div class="code-block">
+        <div class="code-label">Python (PySpark) — 지연 실행 예시</div>
+        <pre><span class="cm"># 아래 세 줄은 아직 실행되지 않음 (계획만 쌓임)</span>
+df = spark.<span class="fn">read</span>.<span class="fn">parquet</span>(<span class="str">"/data/film_properties"</span>)
+df_pp = df.<span class="fn">filter</span>(df.product_type == <span class="str">"CPP"</span>)
+df_avg = df_pp.<span class="fn">groupBy</span>(<span class="str">"grade"</span>).<span class="fn">avg</span>(<span class="str">"tensile_strength"</span>)
+
+<span class="cm"># .show() 호출 시 비로소 실행 — 이 때 Spark가 계획 최적화 후 실행</span>
+df_avg.<span class="fn">show</span>()</pre>
+      </div>
+
+      <h3>🔀 비밀 3 — 분산 처리 (Partitioning)</h3>
+      <p>Spark는 대용량 데이터를 <strong>파티션(Partition)</strong>이라는 조각으로 나누어 여러 Executor에 분배합니다. 각 Executor가 자신의 파티션만 병렬로 처리하기 때문에 전체 처리 시간이 극적으로 줄어듭니다.</p>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>항목</th>
+            <th>전통적 방식 (단일 서버)</th>
+            <th>Spark (분산)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>처리 단위</td>
+            <td>한 대 컴퓨터</td>
+            <td>수십~수백 대 병렬</td>
+          </tr>
+          <tr>
+            <td>중간 결과</td>
+            <td><span class="badge-slow">디스크 저장</span></td>
+            <td><span class="badge-fast">메모리 유지</span></td>
+          </tr>
+          <tr>
+            <td>실행 방식</td>
+            <td>즉시 실행</td>
+            <td><span class="badge-fast">지연 실행 (최적화)</span></td>
+          </tr>
+          <tr>
+            <td>대용량 데이터</td>
+            <td><span class="badge-slow">OOM / 타임아웃</span></td>
+            <td><span class="badge-fast">안정적 처리</span></td>
+          </tr>
+          <tr>
+            <td>비용 구조</td>
+            <td>고성능 서버 1대 필요</td>
+            <td>일반 서버 여러 대 활용</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>🔑 RDD → DataFrame → Dataset 진화</h3>
+      <p>Spark는 세 가지 데이터 추상화를 제공합니다. 현재 실무에서는 <strong>DataFrame API</strong>를 가장 많이 사용하며, SQL과 유사한 문법으로 데이터를 다룰 수 있습니다. Databricks에서는 이 DataFrame이 Delta Lake 테이블로 자연스럽게 연결됩니다.</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-num">1</div>
+          <div class="tl-body">
+            <h4>RDD (Resilient Distributed Dataset)</h4>
+            <p>Spark 초기 핵심 개념. 분산된 데이터 컬렉션. 유연하지만 코드가 복잡하고 최적화 어려움.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">2</div>
+          <div class="tl-body">
+            <h4>DataFrame</h4>
+            <p>행·열 구조의 분산 테이블. SQL과 거의 동일한 문법. 자동 쿼리 최적화(Catalyst Optimizer) 적용. 현재 주력.</p>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-num">3</div>
+          <div class="tl-body">
+            <h4>Dataset (Scala/Java 전용)</h4>
+            <p>DataFrame + 타입 안전성. Python에서는 DataFrame = Dataset으로 통일. PySpark 사용자는 DataFrame만 알면 충분.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 용어 카드 -->
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="term-name">Driver</div>
+          <div class="term-desc">Spark 클러스터의 지휘자. 사용자 코드를 받아 실행 계획을 만들고 Executor들에게 작업을 배분합니다.</div>
+        </div>
+        <div class="term-card">
+          <div class="term-name">Executor</div>
+          <div class="term-desc">실제 데이터를 처리하는 일꾼. 각자 맡은 파티션을 메모리에서 계산하고 결과를 Driver에게 반환합니다.</div>
+        </div>
+        <div class="term-card">
+          <div class="term-name">Partition</div>
+          <div class="term-desc">대용량 데이터를 나눈 조각. 각 파티션은 독립적으로 병렬 처리됩니다. 파티션 수 = 병렬 처리 단위.</div>
+        </div>
+        <div class="term-card">
+          <div class="term-name">Catalyst Optimizer</div>
+          <div class="term-desc">Spark 내부 쿼리 최적화 엔진. 지연 실행 덕분에 불필요한 연산을 제거하고 최적 실행 계획을 자동으로 수립합니다.</div>
+        </div>
+        <div class="term-card">
+          <div class="term-name">Shuffle</div>
+          <div class="term-desc">파티션 간 데이터 재배치. groupBy, join 시 발생하며 네트워크 비용이 크기 때문에 최소화가 성능 최적화의 핵심입니다.</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        Spark는 <span>분산 처리</span> + <span>인메모리</span> + <span>지연 실행</span>이라는 세 가지 비밀로<br>
+        대용량 데이터를 기존 방식보다 수십~수백 배 빠르게 처리합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section quiz-section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>Spark가 Hadoop MapReduce보다 빠른 가장 큰 이유는 무엇인가요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 더 비싼 서버 하드웨어를 사용하기 때문에</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 중간 처리 결과를 디스크 대신 메모리(RAM)에 유지하기 때문에</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 암호화하지 않아 처리 속도가 빠르기 때문에</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> SQL만 사용하기 때문에 코드가 단순하기 때문에</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Spark는 중간 연산 결과를 디스크에 저장하지 않고 메모리(RAM)에 유지합니다. 메모리 접근 속도는 디스크보다 약 100배 빠르기 때문에 여러 단계의 처리가 이어질수록 속도 차이가 극적으로 커집니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">2</span>Spark의 "지연 실행(Lazy Evaluation)"이란 무엇을 의미하나요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Spark 클러스터가 오래되어 응답이 느린 상태</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 코드 실행 시 즉시 에러가 발생하지 않고 나중에 발생하는 현상</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 변환 코드를 즉시 실행하지 않고 실행 계획을 쌓아두다가 Action이 호출될 때 한 번에 최적화 실행하는 방식</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 데이터를 오래된 순서부터 처리하는 방식</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — Spark는 filter, select, groupBy 같은 변환(Transformation) 코드를 작성해도 즉시 실행하지 않습니다. 실행 계획만 내부에 쌓다가 .show(), .collect() 같은 Action이 호출될 때 Catalyst Optimizer가 전체 계획을 최적화한 뒤 실행합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>Spark 클러스터에서 "Driver"의 역할로 가장 적합한 설명은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 사용자 코드를 받아 실행 계획을 수립하고 Executor에게 작업을 배분하는 지휘자</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 각자 맡은 데이터 파티션을 직접 처리하는 일꾼</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 디스크에 영구 저장하는 스토리지 노드</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 클러스터의 네트워크 연결을 관리하는 라우터</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — Driver는 Spark 애플리케이션의 두뇌입니다. 사용자가 작성한 코드를 Task로 변환하고, 클러스터 내 여러 Executor에게 배분하며, 처리 완료된 결과를 수집합니다. Executor들이 실제 데이터를 처리하는 일꾼이라면, Driver는 그 일꾼들을 조율하는 관리자입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>Spark에서 "파티션(Partition)"이 중요한 이유는 무엇인가요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 암호화하여 보안을 강화하기 위해</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터를 알파벳 순서로 정렬하기 위해</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 오래된 데이터를 자동으로 삭제하기 위해</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 대용량 데이터를 여러 Executor가 동시에 병렬 처리할 수 있도록 데이터를 조각으로 나누기 위해</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — 파티션은 Spark 병렬 처리의 핵심 단위입니다. 데이터를 파티션으로 나누면 각 Executor가 자신의 파티션만 독립적으로 처리할 수 있어, 전체 처리 시간이 파티션 수에 비례하여 단축됩니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">5</span>다음 중 현재 Spark 실무에서 가장 많이 사용하는 데이터 추상화 API는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> RDD (Resilient Distributed Dataset)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> DataFrame</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> DStream (스트리밍 전용)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> GraphFrame (그래프 처리 전용)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — DataFrame은 행·열 구조의 분산 테이블로, SQL과 거의 동일한 문법을 제공합니다. Catalyst Optimizer가 자동으로 쿼리를 최적화하기 때문에 RDD보다 코드가 단순하고 성능도 좋습니다. Databricks에서는 이 DataFrame이 Delta Lake 테이블과 자연스럽게 연동됩니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- ③ 전날 복습 (Day 5: SQL로 데이터 조회하기) -->
+  <div class="section review-section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — SQL로 데이터 조회하기</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">1</span>SQL에서 특정 조건을 만족하는 행만 필터링할 때 사용하는 절은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> GROUP BY</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> ORDER BY</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> WHERE</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> HAVING</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — WHERE 절은 개별 행 단위로 조건을 적용하여 원하는 데이터만 필터링합니다. 예: WHERE product_type = 'CPP' AND tensile_strength > 150. HAVING은 GROUP BY 이후 집계 결과에 조건을 적용할 때 사용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">2</span>SQL에서 두 테이블의 공통 키를 기준으로 데이터를 합치는 명령어는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> JOIN</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> UNION</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> MERGE</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> COMBINE</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — JOIN은 공통 키(Key) 컬럼을 기준으로 두 테이블의 행을 연결합니다. INNER JOIN은 양쪽에 모두 존재하는 행만, LEFT JOIN은 왼쪽 테이블 전체를 기준으로 연결합니다. UNION은 두 쿼리 결과를 위아래로 합치는 명령어입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">3</span>GROUP BY와 함께 사용하며, 집계 결과에 조건을 거는 SQL 절은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> WHERE</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> FILTER</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> LIMIT</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> HAVING</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — HAVING은 GROUP BY로 집계된 결과에 조건을 적용합니다. 예: GROUP BY grade HAVING AVG(tensile_strength) > 200. WHERE는 GROUP BY 이전에 행 단위 필터링에 사용하고, HAVING은 GROUP BY 이후 집계 결과에 사용한다는 차이가 있습니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">4</span>다음 SQL 문에서 AVG(tensile_strength)가 하는 역할은?<br><small style="font-family:monospace;background:#f1f5f9;padding:4px 8px;border-radius:6px;display:inline-block;margin-top:6px;">SELECT grade, AVG(tensile_strength) FROM film_data GROUP BY grade</small></div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> tensile_strength 컬럼의 최대값을 반환한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> grade별 tensile_strength의 평균값을 계산한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> tensile_strength가 AVG 이상인 행만 필터링한다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> tensile_strength 컬럼의 총 행 수를 반환한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — AVG()는 평균 집계 함수입니다. GROUP BY grade와 함께 사용되므로 grade별로 그룹을 나눈 뒤 각 그룹 내 tensile_strength의 평균값을 계산합니다. 예: T200 등급 평균 인장강도, T300 등급 평균 인장강도처럼 등급별 물성 평균을 한 번에 구할 수 있습니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtnR" onclick="checkReview()">복습 정답 확인하기 🔄</button>
+    <div class="score-bar" id="scoreBarR">
+      <div class="score-num" id="scoreNumR"></div>
+      <div class="score-msg" id="scoreMsgR"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 7</div>
+    <h3>데이터 타입: 정형·반정형·비정형</h3>
+    <p>CSV, JSON, 이미지, 영상 데이터 이해</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+// ── 오늘의 퀴즈 ──
+const correctAnswers = [1, 2, 0, 3, 1];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+
+// ── 복습 퀴즈 ──
+const correctReview = [2, 0, 3, 1];
+let selectedR = [null, null, null, null];
+let submittedR = false;
+
+document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submittedR) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedR[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkReview() {
+  if (submittedR) return;
+  const unanswered = selectedR.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submittedR = true;
+  let score = 0;
+  document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctReview[qIdx];
+    const isCorrect = selectedR[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selectedR[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBarR').classList.add('show');
+  document.getElementById('scoreNumR').textContent = `${score}/4`;
+  const msgs = {4:'🏆 완벽해요!', 3:'🎉 잘 기억하고 있어요!', 2:'👍 절반 이상!', 1:'📚 어제 내용 한 번 더 읽어봐요', 0:'💪 괜찮아요, 다시 도전!'};
+  document.getElementById('scoreMsgR').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtnR').disabled = true;
+}
+</script>
+
+</body>
+</html>
