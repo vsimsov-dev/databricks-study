@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 10 · AI/ML 기초 — LLM과 파운데이션 모델</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 16px; letter-spacing: 0.5px; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 10px; line-height: 1.3; }
+    .hero p { color: #a0aec0; font-size: 15px; margin-bottom: 20px; }
+    .meta { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: #718096; }
+    .meta span { background: rgba(255,255,255,.07); padding: 6px 14px; border-radius: 20px; }
+
+    /* Container */
+    .container { max-width: 720px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    /* Section */
+    .section { background: var(--card); border-radius: 18px; padding: 32px 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06); border: 1.5px solid var(--border); }
+    .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--primary); margin-bottom: 22px; }
+    .section h2 { font-size: 20px; font-weight: 800; margin-bottom: 14px; }
+    .section h3 { font-size: 16px; font-weight: 700; margin: 24px 0 10px; color: #1a1a2e; }
+    .section p { font-size: 14px; color: #374151; margin-bottom: 14px; }
+
+    /* Highlight box */
+    .highlight { background: #eff6ff; border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 14px; color: #1e3a8a; }
+    .highlight strong { display: block; margin-bottom: 4px; }
+
+    /* Info box */
+    .info-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #166534; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* Analogy box */
+    .analogy { background: #fefce8; border: 1px solid #fde047; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #713f12; }
+    .analogy .label { font-weight: 800; font-size: 12px; letter-spacing: 1px; color: #92400e; margin-bottom: 6px; }
+
+    /* Diagram */
+    .diagram { background: #f8fafc; border: 1.5px solid var(--border); border-radius: 14px; padding: 24px; margin: 20px 0; text-align: center; }
+    .diagram-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .diagram-box { background: var(--accent); color: white; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; min-width: 80px; }
+    .diagram-box.orange { background: #f59e0b; }
+    .diagram-box.green { background: #10b981; }
+    .diagram-box.red { background: var(--primary); }
+    .diagram-box.gray { background: #6b7280; }
+    .diagram-box.purple { background: #7c3aed; }
+    .diagram-arrow { font-size: 20px; color: var(--muted); }
+    .diagram-label { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    /* Compare table */
+    .compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .compare-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; }
+    .compare-table th:first-child { border-radius: 10px 0 0 0; }
+    .compare-table th:last-child { border-radius: 0 10px 0 0; }
+    .compare-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #374151; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: #f9fafb; }
+
+    /* Term grid */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+    .term-card { background: #f8fafc; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .term-card .term { font-weight: 800; font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+    .term-card .def { font-size: 13px; color: #4b5563; line-height: 1.5; }
+
+    /* Summary box */
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 20px 24px; margin-top: 24px; text-align: center; }
+    .summary-box .label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #a0aec0; margin-bottom: 8px; }
+    .summary-box p { font-size: 15px; font-weight: 700; line-height: 1.6; }
+
+    /* Model cards */
+    .model-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
+    .model-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+    .model-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .model-card .name { font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+    .model-card .desc { font-size: 12px; color: var(--muted); }
+
+    /* Step list */
+    .steps { margin: 16px 0; }
+    .step { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+    .step-num { width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-content { flex: 1; padding-top: 4px; font-size: 14px; color: #374151; }
+    .step-content strong { display: block; color: #1a1a2e; font-size: 15px; margin-bottom: 2px; }
+
+    /* Quiz */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; cursor: pointer; font-size: 14px; transition: all .2s; background: white; text-align: left; width: 100%; }
+    .option:hover { border-color: #3b5bdb; background: #eef2ff; }
+    .option.selected { border-color: #3b5bdb; background: #eef2ff; font-weight: 600; }
+    .option .opt-label { font-weight: 700; color: #3b5bdb; min-width: 20px; }
+    .option.correct { border-color: #10b981; background: #d1fae5; }
+    .option.wrong { border-color: #ef4444; background: #fee2e2; }
+    .option.correct .opt-label { color: #10b981; }
+    .option.wrong .opt-label { color: #ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size: 11px; width: 32px; height: 32px; border-radius: 10px; }
+    .num.o { background: #10b981; }
+    .num.x { background: #ef4444; }
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover:not(:disabled) { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* Footer */
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 18px; padding: 32px 28px; text-align: center; margin-top: 32px; }
+    .footer-card .next { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #a0aec0; margin-bottom: 10px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .footer-card p { color: #a0aec0; font-size: 14px; margin-bottom: 20px; }
+    .back-link { display: inline-block; background: rgba(255,255,255,.1); color: white; text-decoration: none; padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .back-link:hover { background: rgba(255,255,255,.2); }
+
+    /* Token viz */
+    .token-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+    .token { background: #dbeafe; border: 1px solid #93c5fd; border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 600; color: #1e40af; }
+    .token.special { background: #fce7f3; border-color: #f9a8d4; color: #9d174d; }
+    .token.num-tok { background: #dcfce7; border-color: #86efac; color: #166534; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 10 · AI/ML</div>
+  <h1>AI/ML 기초 — LLM과 파운데이션 모델</h1>
+  <p>거대언어모델의 작동 원리</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 개념 설명 -->
+  <div class="section">
+    <div class="section-title">오늘의 개념</div>
+    <h2>LLM이란 무엇이고, 어떻게 작동하는가?</h2>
+
+    <p>요즘 어딜 가도 "AI", "ChatGPT", "LLM"이라는 말이 들립니다. 업무에서도 AI를 활용하라는 말을 자주 듣지만, 정작 "이게 어떻게 작동하는 거지?" 라는 의문이 해결되지 않으면 제대로 활용하기 어렵습니다. 오늘은 LLM의 핵심 원리를 이해해봅시다.</p>
+
+    <p>Databricks는 단순한 데이터 플랫폼을 넘어, 기업이 자체 AI 모델을 학습시키고 운영할 수 있는 <strong>AI 플랫폼</strong>으로 진화하고 있습니다. LLM을 이해하면 Databricks의 AI 기능들—Genie, DBRX, Model Serving—이 왜 강력한지 체감할 수 있습니다.</p>
+
+    <h3>🤖 LLM이란? (Large Language Model)</h3>
+    <p>LLM은 <strong>수천억 개의 매개변수(파라미터)</strong>를 가진 초대형 신경망 모델로, 방대한 텍스트 데이터를 학습해 자연어를 이해하고 생성합니다. GPT-4, Claude, Gemini, DBRX가 모두 LLM입니다.</p>
+
+    <div class="analogy">
+      <div class="label">💡 비유</div>
+      PP 원료를 배합할 때, 수천 번의 실험 데이터를 쌓아 "이 조건에서는 이 물성이 나온다"는 패턴을 익히듯, LLM도 수조 개의 문장을 학습해 "이 문맥 다음엔 이 단어가 온다"는 패턴을 익힙니다. 단지 그 규모가 어마어마하게 클 뿐입니다.
+    </div>
+
+    <h3>🔤 토큰(Token): LLM이 보는 언어의 단위</h3>
+    <p>LLM은 글자나 단어 그대로가 아니라 <strong>토큰</strong>이라는 단위로 텍스트를 처리합니다. 토큰은 대략 단어의 일부 또는 단어 하나에 해당합니다.</p>
+
+    <div class="diagram">
+      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">문장 → 토큰화 과정</p>
+      <div style="font-size:14px; font-weight:600; color:#374151; margin-bottom:10px;">"고분자 필름의 투명도를 높이려면?"</div>
+      <div class="token-row">
+        <span class="token">고분자</span>
+        <span class="token">필름</span>
+        <span class="token">의</span>
+        <span class="token">투명</span>
+        <span class="token">도</span>
+        <span class="token">를</span>
+        <span class="token">높이</span>
+        <span class="token">려면</span>
+        <span class="token special">?</span>
+      </div>
+      <div class="diagram-label">각 조각이 하나의 '토큰' — LLM은 이 토큰들의 패턴을 학습</div>
+    </div>
+
+    <h3>⚙️ Transformer: LLM의 핵심 엔진</h3>
+    <p>현대 LLM은 모두 <strong>Transformer 아키텍처</strong> 기반입니다. 핵심 원리는 <strong>Attention(주의 집중)</strong>입니다 — 문장 내 모든 단어가 서로를 얼마나 "주목"해야 하는지를 계산합니다.</p>
+
+    <div class="diagram">
+      <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">LLM 추론 흐름</p>
+      <div class="diagram-row">
+        <div class="diagram-box gray">입력 텍스트</div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box">토큰화</div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box orange">Transformer<br>(Attention)</div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box green">다음 토큰<br>예측</div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box red">출력 텍스트</div>
+      </div>
+      <div class="diagram-label">한 번에 한 토큰씩 생성 — 이를 수백 번 반복해 문장을 완성</div>
+    </div>
+
+    <h3>🏛️ 파운데이션 모델(Foundation Model)이란?</h3>
+    <p>파운데이션 모델은 <strong>범용 목적으로 대규모 학습된 기반 모델</strong>입니다. 처음부터 특정 목적으로 만든 것이 아니라, 광범위한 데이터로 학습한 뒤 다양한 용도로 활용(Fine-tuning)할 수 있습니다.</p>
+
+    <div class="model-cards">
+      <div class="model-card">
+        <div class="icon">🌐</div>
+        <div class="name">GPT-4o</div>
+        <div class="desc">OpenAI의 멀티모달 파운데이션 모델</div>
+      </div>
+      <div class="model-card">
+        <div class="icon">🤖</div>
+        <div class="name">Claude 3.x</div>
+        <div class="desc">Anthropic의 대화형 파운데이션 모델</div>
+      </div>
+      <div class="model-card">
+        <div class="icon">🧱</div>
+        <div class="name">DBRX</div>
+        <div class="desc">Databricks가 직접 개발한 오픈소스 LLM</div>
+      </div>
+      <div class="model-card">
+        <div class="icon">🦙</div>
+        <div class="name">Llama 3</div>
+        <div class="desc">Meta의 오픈소스 파운데이션 모델</div>
+      </div>
+    </div>
+
+    <h3>🔧 학습 → 파인튜닝 → 서빙: 모델 생애주기</h3>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>사전 학습 (Pre-training)</strong>
+          인터넷, 책, 논문 등 수조 개의 토큰으로 범용 언어 능력 학습. 엄청난 GPU와 비용이 필요 (수백억 원 규모).
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>파인튜닝 (Fine-tuning)</strong>
+          기업 데이터나 특정 도메인으로 추가 학습. Databricks에서 자체 데이터로 PP 물성 예측 모델을 만든다면 이 단계.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>RLHF (인간 피드백 강화학습)</strong>
+          사람이 좋은 답변과 나쁜 답변을 채점해 모델을 더 유용하게 조정. ChatGPT가 친절한 이유.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>서빙 (Model Serving)</strong>
+          학습된 모델을 API로 배포해 실제 서비스에서 사용. Databricks Model Serving이 이를 담당.
+        </div>
+      </div>
+    </div>
+
+    <h3>🏭 고분자 제품 개발 업무에서는?</h3>
+    <div class="info-box">
+      <strong>📌 팀에서 LLM을 이런 방식으로 활용할 수 있어요</strong>
+      <ul style="margin-left:16px; margin-top:6px; font-size:14px; color:#166534;">
+        <li style="margin-bottom:6px;"><strong>기술 문서 요약:</strong> PP/PE 물성 데이터 시트, 고객 클레임 보고서를 LLM으로 자동 요약</li>
+        <li style="margin-bottom:6px;"><strong>실험 조건 제안:</strong> 레트로트 내열성 개선 실험 설계 시 LLM에게 초안 제안 요청</li>
+        <li style="margin-bottom:6px;"><strong>화학물질 안전 교육 자료:</strong> MSDS 내용을 LLM이 쉬운 언어로 재구성해 안전 교육 자료 생성</li>
+        <li><strong>파인튜닝 활용:</strong> 자사 품질 데이터로 파인튜닝하면 "이 배합에서 OIT는?" 같은 전문 질의에 더 정확하게 답변</li>
+      </ul>
+    </div>
+
+    <h3>📊 기존 AI vs LLM: 무엇이 다른가?</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>기존 머신러닝</th>
+          <th>LLM (파운데이션 모델)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>학습 방식</strong></td>
+          <td>특정 문제용 데이터로 학습</td>
+          <td>방대한 범용 데이터로 학습</td>
+        </tr>
+        <tr>
+          <td><strong>활용 범위</strong></td>
+          <td>한 가지 task (분류/회귀)</td>
+          <td>질의응답·요약·코딩·번역 등 다목적</td>
+        </tr>
+        <tr>
+          <td><strong>커스터마이즈</strong></td>
+          <td>처음부터 재학습 필요</td>
+          <td>파인튜닝 또는 프롬프트로 조정</td>
+        </tr>
+        <tr>
+          <td><strong>규모</strong></td>
+          <td>수백만 파라미터</td>
+          <td>수십억~수천억 파라미터</td>
+        </tr>
+        <tr>
+          <td><strong>PP 물성 예측 예시</strong></td>
+          <td>배합 조건 → MFR 예측 모델</td>
+          <td>배합 조건 설명 → 종합 분석 + 제안</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 핵심 용어 -->
+    <h3>🗝️ 핵심 용어 정리</h3>
+    <div class="term-grid">
+      <div class="term-card">
+        <div class="term">LLM</div>
+        <div class="def">Large Language Model. 수십억~수천억 파라미터를 가진 초대형 언어 모델.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">토큰 (Token)</div>
+        <div class="def">LLM이 처리하는 텍스트의 최소 단위. 단어의 일부~단어 수 개에 해당.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">파운데이션 모델</div>
+        <div class="def">범용 대규모 학습 후 다양한 용도로 활용 가능한 기반 모델.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">파인튜닝 (Fine-tuning)</div>
+        <div class="def">파운데이션 모델을 특정 도메인 데이터로 추가 학습해 전문화하는 과정.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">Transformer</div>
+        <div class="def">현대 LLM의 핵심 아키텍처. Attention 메커니즘으로 문맥을 이해.</div>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <div class="label">💡 한 줄 요약</div>
+      <p>LLM은 수조 개의 텍스트를 학습해 언어 패턴을 익힌 범용 AI로, Databricks에서 기업 데이터로 파인튜닝하면 고분자 업무에 특화된 AI 어시스턴트를 만들 수 있습니다.</p>
+    </div>
+  </div>
+
+  <!-- 오늘의 퀴즈 -->
+  <div class="section quiz-section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">1</span>LLM에서 '파라미터(매개변수)'가 많을수록 일반적으로 의미하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 추론 속도가 빨라진다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 학습에 필요한 데이터가 적어진다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 더 복잡한 언어 패턴을 학습할 수 있다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 토큰 처리 단위가 작아진다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — 파라미터는 모델이 학습을 통해 조정하는 가중치의 개수입니다. 파라미터가 많을수록 더 복잡하고 미묘한 언어 패턴을 학습할 수 있지만, 추론 속도는 오히려 느려지고 학습 데이터도 더 많이 필요합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">2</span>LLM이 텍스트를 처리하는 기본 단위를 무엇이라 하는가?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 레코드 (Record)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 토큰 (Token)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 셀 (Cell)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 노드 (Node)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — LLM은 텍스트를 '토큰' 단위로 분할해 처리합니다. 토큰은 글자 조각, 단어, 또는 단어 몇 개에 해당하며, LLM은 이전 토큰들을 보고 다음 토큰을 예측하는 방식으로 텍스트를 생성합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>Databricks가 직접 개발한 오픈소스 LLM의 이름은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> DBRX</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Llama</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Gemini</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Falcon</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — DBRX는 Databricks가 2024년에 공개한 오픈소스 LLM으로, 당시 오픈소스 모델 중 최고 성능을 기록했습니다. Databricks 플랫폼에서 직접 활용하거나 파인튜닝할 수 있습니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>파운데이션 모델을 특정 도메인(예: 고분자 물성 분야)에 맞게 추가 학습하는 과정은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 사전 학습 (Pre-training)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 토큰화 (Tokenization)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 서빙 (Serving)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 파인튜닝 (Fine-tuning)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — 파인튜닝은 이미 범용 학습이 완료된 파운데이션 모델에 특정 도메인 데이터를 추가 학습시켜 전문화하는 과정입니다. 예: PP 물성 데이터로 파인튜닝 → 배합 조건 질의에 특화된 모델 완성.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">5</span>현대 LLM 대부분이 기반으로 하는 핵심 아키텍처는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> CNN (합성곱 신경망)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> RNN (순환 신경망)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Transformer</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Decision Tree</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — 2017년 Google이 발표한 Transformer 아키텍처는 'Attention is All You Need' 논문에서 시작됐습니다. Self-Attention 메커니즘을 통해 문장 내 모든 단어 간의 관계를 병렬로 처리해, 이전 RNN 방식보다 훨씬 효과적입니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 전날 복습 (Day 9: 데이터 파이프라인 기초) -->
+  <div class="section review-section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — 데이터 파이프라인 기초</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">1</span>ETL에서 'T'가 의미하는 단계는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Transfer (전송)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Transform (변환)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Test (검증)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Terminate (종료)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — ETL은 Extract(추출) → Transform(변환) → Load(적재)의 약자입니다. 변환 단계에서 데이터 정제, 형식 통일, 결측값 처리 등을 수행한 뒤 최종 목적지에 적재합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">2</span>ELT가 ETL과 다른 핵심 차이점은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 먼저 적재한 후 변환한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 데이터를 먼저 변환한 후 추출한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 변환 과정이 없다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 적재 과정이 없다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — ELT(Extract-Load-Transform)는 원시 데이터를 그대로 먼저 레이크하우스에 적재한 뒤, 강력한 컴퓨팅 엔진으로 변환합니다. Databricks처럼 처리 능력이 뛰어난 플랫폼에서 선호되는 방식입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">3</span>Databricks Workflows의 주요 역할은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터를 시각화하는 도구</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 클러스터를 생성하고 삭제하는 도구</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> SQL 쿼리를 최적화하는 도구</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 여러 작업을 순서대로 자동 실행하는 파이프라인 오케스트레이션 도구</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — Databricks Workflows는 노트북, SQL, Python 스크립트 등 여러 작업을 순서나 의존관계에 따라 자동으로 실행하는 오케스트레이션 도구입니다. 매일 정해진 시간에 데이터 파이프라인을 자동으로 돌리는 데 활용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">4</span>메달리온 아키텍처에서 '정제된 비즈니스 로직이 적용된 데이터'는 어느 계층에 해당하는가?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Bronze</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Silver</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Gold</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Platinum</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — Gold 계층은 비즈니스 목적에 맞게 최종 집계·가공된 데이터를 담습니다. 예: 월별 PP 제품 불량률 대시보드용 집계 테이블. Silver가 정제된 원시 데이터라면, Gold는 분석·보고에 바로 쓸 수 있는 완성형 데이터입니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtnR" onclick="checkReview()">복습 정답 확인하기 🔄</button>
+    <div class="score-bar" id="scoreBarR">
+      <div class="score-num" id="scoreNumR"></div>
+      <div class="score-msg" id="scoreMsgR"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 11</div>
+    <h3>RAG란? 엔터프라이즈에서 왜 쓰는가?</h3>
+    <p>검색 증강 생성으로 AI에 지식 주입하기</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+  // ===== 오늘의 퀴즈 =====
+  const correctAnswers = [2, 1, 0, 3, 2];
+  let selected = [null, null, null, null, null];
+  let submitted = false;
+
+  document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submitted) return;
+        item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selected[qIdx] = parseInt(btn.dataset.idx);
+      });
+    });
+  });
+
+  function checkAnswers() {
+    if (submitted) return;
+    const unanswered = selected.filter(s => s === null).length;
+    if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+    submitted = true;
+    let score = 0;
+    document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+      const correct = correctAnswers[qIdx];
+      const isCorrect = selected[qIdx] === correct;
+      if (isCorrect) score++;
+      const numEl = item.querySelector('.num');
+      numEl.classList.add('ox');
+      if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+      else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+      item.querySelectorAll('.option').forEach(btn => {
+        btn.disabled = true;
+        const idx = parseInt(btn.dataset.idx);
+        if (idx === correct) btn.classList.add('correct');
+        else if (idx === selected[qIdx]) btn.classList.add('wrong');
+      });
+      item.querySelector('.answer-box').classList.add('show');
+    });
+    document.getElementById('scoreBar').classList.add('show');
+    document.getElementById('scoreNum').textContent = `${score}/5`;
+    const msgs = {5:'🏆 완벽해요!',4:'🎉 아주 잘했어요!',3:'👍 절반 이상 맞췄어요!',2:'📚 조금 더 읽어보고 재도전해봐요!',1:'💪 괜찮아요, 처음엔 다 어려워요!',0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+    document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+    document.getElementById('submitBtn').disabled = true;
+  }
+
+  // ===== 복습 퀴즈 =====
+  const correctReview = [1, 0, 3, 2];
+  let selectedR = [null, null, null, null];
+  let submittedR = false;
+
+  document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (submittedR) return;
+        item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedR[qIdx] = parseInt(btn.dataset.idx);
+      });
+    });
+  });
+
+  function checkReview() {
+    if (submittedR) return;
+    const unanswered = selectedR.filter(s => s === null).length;
+    if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+    submittedR = true;
+    let score = 0;
+    document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+      const correct = correctReview[qIdx];
+      const isCorrect = selectedR[qIdx] === correct;
+      if (isCorrect) score++;
+      const numEl = item.querySelector('.num');
+      numEl.classList.add('ox');
+      if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+      else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+      item.querySelectorAll('.option').forEach(btn => {
+        btn.disabled = true;
+        const idx = parseInt(btn.dataset.idx);
+        if (idx === correct) btn.classList.add('correct');
+        else if (idx === selectedR[qIdx]) btn.classList.add('wrong');
+      });
+      item.querySelector('.answer-box').classList.add('show');
+    });
+    document.getElementById('scoreBarR').classList.add('show');
+    document.getElementById('scoreNumR').textContent = `${score}/4`;
+    const msgs = {4:'🏆 완벽해요!',3:'🎉 잘 기억하고 있어요!',2:'👍 절반 이상!',1:'📚 어제 내용 한 번 더 읽어봐요',0:'💪 괜찮아요, 다시 도전!'};
+    document.getElementById('scoreMsgR').textContent = msgs[score] || msgs[0];
+    document.getElementById('submitBtnR').disabled = true;
+  }
+</script>
+
+</body>
+</html>
