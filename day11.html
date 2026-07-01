@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 11 · RAG란? 엔터프라이즈에서 왜 쓰는가?</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    a { color: var(--accent); }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 24px 40px; text-align: center; }
+    .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 16px; letter-spacing: .5px; }
+    .hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    .hero p { color: #a0aec0; font-size: 15px; margin-bottom: 20px; }
+    .meta { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: #718096; }
+    .meta span { background: rgba(255,255,255,.08); padding: 4px 12px; border-radius: 20px; }
+
+    /* Layout */
+    .container { max-width: 720px; margin: 0 auto; padding: 36px 20px 80px; }
+    .section { background: var(--card); border-radius: 18px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 6px rgba(0,0,0,.06); border: 1.5px solid var(--border); }
+    .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 24px; }
+    h2 { font-size: 20px; font-weight: 800; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 17px; font-weight: 700; margin: 24px 0 8px; color: #16213e; }
+    p { font-size: 15px; color: #374151; margin-bottom: 14px; }
+
+    /* Diagram / Visual */
+    .diagram { background: linear-gradient(135deg, #1a1a2e, #0f3460); border-radius: 14px; padding: 28px 20px; margin: 20px 0; color: white; }
+    .diagram-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 20px; text-align: center; }
+    .flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .flow-box { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; text-align: center; min-width: 90px; }
+    .flow-box.highlight { background: var(--primary); border-color: var(--primary); }
+    .flow-arrow { font-size: 18px; color: #a0aec0; }
+
+    /* Comparison table */
+    .compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .compare-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; }
+    .compare-table th:first-child { border-radius: 10px 0 0 0; }
+    .compare-table th:last-child { border-radius: 0 10px 0 0; }
+    .compare-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: #f9fafb; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-right: 4px; }
+    .tag-red { background: #fee2e2; color: #b91c1c; }
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-blue { background: #dbeafe; color: #1d4ed8; }
+
+    /* Step cards */
+    .steps { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+    .step-card { display: flex; gap: 14px; align-items: flex-start; background: #f9fafb; border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+    .step-num { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: white; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-content h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .step-content p { font-size: 13px; color: var(--muted); margin: 0; }
+
+    /* Code block */
+    .code-block { background: #1e293b; color: #e2e8f0; border-radius: 12px; padding: 20px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.8; margin: 16px 0; overflow-x: auto; }
+    .code-block .comment { color: #64748b; }
+    .code-block .keyword { color: #7dd3fc; }
+    .code-block .string { color: #86efac; }
+    .code-block .func { color: #fbbf24; }
+
+    /* Term grid */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+    .term-card { background: #f0f4ff; border-radius: 12px; padding: 14px 16px; border: 1.5px solid #c7d7ff; }
+    .term-card .term { font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+    .term-card .def { font-size: 13px; color: #374151; line-height: 1.5; }
+
+    /* Summary box */
+    .summary-box { background: linear-gradient(135deg, #FF3621 0%, #c42a18 100%); color: white; border-radius: 14px; padding: 20px 24px; margin: 24px 0 0; }
+    .summary-box .label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: .7; margin-bottom: 6px; }
+    .summary-box p { font-size: 16px; font-weight: 700; margin: 0; line-height: 1.5; }
+
+    /* Practice box */
+    .practice-box { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; padding: 20px 24px; margin: 20px 0; }
+    .practice-box .label { font-size: 12px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .practice-box p { font-size: 14px; color: #78350f; margin: 0; line-height: 1.6; }
+
+    /* Quiz */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; cursor: pointer; font-size: 14px; transition: all .2s; background: white; text-align: left; width: 100%; }
+    .option:hover { border-color: #3b5bdb; background: #eef2ff; }
+    .option.selected { border-color: #3b5bdb; background: #eef2ff; font-weight: 600; }
+    .option .opt-label { font-weight: 700; color: #3b5bdb; min-width: 20px; }
+    .option.correct { border-color: #10b981; background: #d1fae5; }
+    .option.wrong { border-color: #ef4444; background: #fee2e2; }
+    .option.correct .opt-label { color: #10b981; }
+    .option.wrong .opt-label { color: #ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size: 11px; width: 32px; height: 32px; border-radius: 10px; }
+    .num.o { background: #10b981; }
+    .num.x { background: #ef4444; }
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* Footer */
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 18px; padding: 32px; text-align: center; }
+    .next { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 10px; }
+    .footer-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .footer-card p { color: #a0aec0; font-size: 14px; margin-bottom: 20px; }
+    .back-link { display: inline-block; background: rgba(255,255,255,.1); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .back-link:hover { background: rgba(255,255,255,.2); }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Day 11 · AI/RAG</div>
+  <h1>RAG란? 엔터프라이즈에서 왜 쓰는가?</h1>
+  <p>검색 증강 생성으로 AI에 지식 주입하기</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 개념 설명 섹션 -->
+  <div class="section">
+    <div class="section-title">오늘의 핵심 개념</div>
+
+    <p>어제 LLM(대형 언어 모델)을 배웠습니다. ChatGPT나 Claude 같은 AI는 방대한 텍스트로 학습되어 있지만, <strong>한 가지 결정적인 한계</strong>가 있습니다. 바로 "학습 데이터가 끊기는 시점"과 "회사 내부 자료를 모른다"는 것입니다. 예를 들어 "우리 회사 최신 PP 규격서의 인장강도 기준은?" 이라고 물으면 AI는 답을 모릅니다. 이 문제를 해결하는 기술이 바로 <strong>RAG(Retrieval-Augmented Generation)</strong>입니다.</p>
+
+    <p>RAG는 "검색(Retrieval) + AI 생성(Generation)"을 결합한 방식입니다. AI가 답하기 전에 먼저 관련 문서를 찾아서 읽고, 그 내용을 바탕으로 답변을 생성합니다. 도서관 사서가 책을 찾아다 주면, 전문가가 그 책을 읽고 요약해 주는 것과 같습니다.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">⚡ RAG 작동 흐름</div>
+      <div class="flow">
+        <div class="flow-box">사용자 질문</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">문서 검색<br><small style="font-size:10px;opacity:.8;">(Retrieval)</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">관련 문서<br>조각 추출</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">LLM 생성<br><small style="font-size:10px;opacity:.8;">(Generation)</small></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">정확한 답변</div>
+      </div>
+    </div>
+
+    <h3>📚 왜 일반 LLM만으로는 부족한가?</h3>
+    <p>LLM은 학습된 시점까지의 공개 데이터만 알고 있습니다. 회사 내부 기술 규격, 최신 시험 성적서, 고객 요청 사항 등은 당연히 모릅니다. 또한 잘못된 정보를 그럴듯하게 만들어내는 "환각(Hallucination)" 문제도 있습니다. RAG는 이 두 가지를 동시에 해결합니다.</p>
+
+    <table class="compare-table">
+      <tr>
+        <th>구분</th>
+        <th>일반 LLM</th>
+        <th>RAG 적용 LLM</th>
+      </tr>
+      <tr>
+        <td><strong>지식 범위</strong></td>
+        <td><span class="tag tag-red">❌</span> 학습 데이터까지만</td>
+        <td><span class="tag tag-green">✅</span> 실시간 내부 문서 포함</td>
+      </tr>
+      <tr>
+        <td><strong>최신성</strong></td>
+        <td><span class="tag tag-red">❌</span> 수개월~수년 지연</td>
+        <td><span class="tag tag-green">✅</span> 최신 파일 즉시 반영</td>
+      </tr>
+      <tr>
+        <td><strong>환각 위험</strong></td>
+        <td><span class="tag tag-red">❌</span> 높음</td>
+        <td><span class="tag tag-green">✅</span> 출처 기반으로 낮아짐</td>
+      </tr>
+      <tr>
+        <td><strong>회사 내부 정보</strong></td>
+        <td><span class="tag tag-red">❌</span> 모름</td>
+        <td><span class="tag tag-green">✅</span> 접근 가능</td>
+      </tr>
+      <tr>
+        <td><strong>구축 비용</strong></td>
+        <td><span class="tag tag-green">✅</span> 낮음 (그냥 쓰면 됨)</td>
+        <td><span class="tag tag-blue">🔧</span> 문서 파이프라인 필요</td>
+      </tr>
+    </table>
+
+    <h3>🔍 RAG의 5단계 작동 원리</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>문서 수집 및 청크(Chunk) 분할</h4>
+          <p>PDF, Word, 웹페이지 등 문서를 수집하고 500~1000자 단위로 잘게 자릅니다. 너무 긴 문서는 한꺼번에 AI에 넣을 수 없기 때문입니다.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>임베딩(Embedding) — 의미를 숫자로 변환</h4>
+          <p>각 청크를 수백~수천 개의 숫자(벡터)로 변환합니다. 비슷한 내용은 비슷한 숫자 값을 가집니다. (내일 더 자세히 배울 예정이에요!)</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>벡터 DB에 저장</h4>
+          <p>변환된 벡터를 벡터 DB에 저장합니다. 이후 검색 시 의미적으로 유사한 문서를 빠르게 찾을 수 있습니다.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>질문 → 유사 문서 검색</h4>
+          <p>사용자가 질문하면 질문도 벡터로 변환하고, DB에서 가장 유사한 문서 조각 3~5개를 꺼냅니다.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>LLM에게 문서 + 질문 전달 → 답변 생성</h4>
+          <p>검색된 문서를 컨텍스트로 붙여서 LLM에 전달합니다. AI는 이 문서를 읽고 근거 있는 답변을 생성합니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>🏭 Databricks에서 RAG 구현 예시</h3>
+    <p>Databricks는 RAG 파이프라인 전체를 한 플랫폼에서 구성할 수 있습니다. Delta Lake에 문서를 저장하고, MLflow로 실험을 관리하며, Vector Search로 빠른 검색을 제공합니다.</p>
+
+    <div class="code-block">
+<span class="comment"># Databricks RAG 구현 예시 (개념 코드)</span>
+
+<span class="keyword">from</span> databricks.vector_search.client <span class="keyword">import</span> VectorSearchClient
+
+<span class="comment"># 1. 문서 임베딩 후 Vector Search 인덱스에 저장</span>
+vs_client = VectorSearchClient()
+index = vs_client.get_index(
+    endpoint_name=<span class="string">"pp-docs-endpoint"</span>,
+    index_name=<span class="string">"catalog.schema.pp_spec_index"</span>
+)
+
+<span class="comment"># 2. 질문으로 유사 문서 검색</span>
+question = <span class="string">"레트로트용 CPP의 열접착 강도 기준은?"</span>
+results = index.<span class="func">similarity_search</span>(
+    query_text=question,
+    num_results=<span class="string">3</span>
+)
+
+<span class="comment"># 3. 검색된 문서 + 질문 → LLM에 전달하여 답변 생성</span>
+context = <span class="string">"\n"</span>.join([r[<span class="string">'text'</span>] <span class="keyword">for</span> r <span class="keyword">in</span> results])
+answer = llm.<span class="func">generate</span>(f<span class="string">"컨텍스트: {context}\n\n질문: {question}"</span>)
+    </div>
+
+    <h3>🧪 팀에서 RAG를 쓰면?</h3>
+    <p>고분자 제품 개발 업무에서는 수많은 규격서, 시험 성적서, 고객 요청 사양이 쌓입니다. RAG를 적용하면 "레트로트용 CPP 규격의 열접착 온도 조건은?", "EAA 코팅 두께 기준이 어느 문서에 있지?" 같은 질문에 AI가 내부 문서를 뒤져 즉시 답할 수 있습니다. 안전환경 업무에서도 화학물질 SDS(물질안전보건자료) 전체를 RAG로 구성하면 "이 물질의 응급 처치법은?" 같은 질문에 빠르게 대응할 수 있습니다.</p>
+
+    <div class="practice-box">
+      <div class="label">💡 실무 적용 아이디어</div>
+      <p>팀에서 관리하는 PP·PE 제품 규격서 PDF를 Delta Lake에 적재 → 청크 분할 → Databricks Vector Search에 인덱싱하면, "배터리 파우치용 CPP의 방습성 시험 기준"처럼 구체적인 기술 질문을 자연어로 검색할 수 있습니다. 기존에 사람이 직접 찾던 시간을 AI가 단 몇 초로 단축합니다.</p>
+    </div>
+
+    <h3>🔑 핵심 용어 카드</h3>
+    <div class="term-grid">
+      <div class="term-card">
+        <div class="term">RAG</div>
+        <div class="def">Retrieval-Augmented Generation. 검색과 AI 생성을 결합한 기술. 내부 문서를 AI에 주입하는 방법.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">청크(Chunk)</div>
+        <div class="def">긴 문서를 작은 조각으로 자른 단위. 보통 500~1000자 크기로 분할.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">임베딩(Embedding)</div>
+        <div class="def">텍스트를 숫자 벡터로 변환하는 과정. 의미가 비슷한 텍스트는 비슷한 벡터 값을 가짐.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">벡터 DB</div>
+        <div class="def">임베딩 벡터를 저장하고 유사도 검색을 빠르게 수행하는 특수 데이터베이스.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">환각(Hallucination)</div>
+        <div class="def">LLM이 사실이 아닌 내용을 그럴듯하게 만들어 내는 현상. RAG로 크게 줄일 수 있음.</div>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <div class="label">📌 한 줄 요약</div>
+      <p>RAG는 AI가 모르는 내부 문서를 실시간으로 검색해 답변에 활용하는 기술로, LLM의 환각·정보 시한 문제를 동시에 해결합니다.</p>
+    </div>
+  </div>
+
+  <!-- 오늘의 퀴즈 -->
+  <div class="section quiz-section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>RAG(Retrieval-Augmented Generation)에서 "Retrieval"이 의미하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> AI 모델을 새로 학습시키는 과정</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 질문과 관련된 문서를 검색해서 가져오는 과정</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 텍스트를 숫자 벡터로 변환하는 과정</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> LLM이 답변을 생성하는 과정</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Retrieval은 "검색·인출"을 뜻합니다. RAG에서는 사용자 질문과 의미적으로 유사한 문서 조각을 벡터 DB에서 꺼내오는 단계입니다. 이 문서가 LLM에 전달되어 답변 생성의 근거가 됩니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">2</span>RAG가 일반 LLM 단독 사용보다 유리한 가장 큰 이유 두 가지는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 더 빠르고 비용이 저렴함</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 답변이 더 길고 화려함</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 내부 최신 정보 반영 + 환각(Hallucination) 감소</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 인터넷 검색 속도가 빠름</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — RAG의 핵심 이점은 ① 회사 내부 문서나 최신 데이터를 AI에 주입할 수 있고, ② 문서 근거를 바탕으로 답하므로 환각(허구 정보 생성)이 크게 줄어든다는 점입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>RAG 파이프라인에서 "청크(Chunk) 분할"을 하는 이유는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> LLM이 한 번에 처리할 수 있는 텍스트 길이에 제한이 있기 때문</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 문서를 암호화하기 위해</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 Delta Lake에 저장하기 위해</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 그래픽 카드의 메모리 절약을 위해</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — LLM은 한 번에 처리할 수 있는 텍스트 길이(컨텍스트 윈도우)에 제한이 있습니다. 또한 검색 정확도를 높이기 위해 관련 부분만 추출하여 전달하는 것이 효율적입니다. 그래서 긴 문서를 500~1000자 단위로 잘라 사용합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>임베딩(Embedding)에 대한 설명으로 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 문서를 이미지로 변환하는 기술</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 텍스트를 다른 언어로 번역하는 과정</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터를 압축하여 용량을 줄이는 기술</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 텍스트를 숫자 벡터로 변환하여 의미를 수치화하는 과정</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — 임베딩은 텍스트의 의미를 수백~수천 개의 숫자(벡터)로 표현합니다. "열접착 강도"와 "heat seal strength"처럼 다른 표현이지만 의미가 유사하면 비슷한 벡터 값을 가집니다. 이를 통해 의미 기반 검색이 가능합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">5</span>Databricks에서 RAG 파이프라인 구축 시, 문서 임베딩 벡터를 저장하고 유사도 검색을 수행하는 컴포넌트는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Delta Live Tables</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Databricks Vector Search</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> MLflow Model Registry</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Databricks SQL Warehouse</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Databricks Vector Search는 임베딩 벡터를 저장하고 의미 기반 유사도 검색을 고속으로 수행하는 전용 서비스입니다. Delta Lake와 통합되어 문서 업데이트 시 인덱스를 자동으로 동기화할 수도 있습니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 복습 섹션 (Day 10: AI/ML 기초 — LLM과 파운데이션 모델) -->
+  <div class="section review-section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — AI/ML 기초 · LLM과 파운데이션 모델</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">1</span>LLM(Large Language Model)이 텍스트를 생성하는 기본 원리는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 인터넷에서 실시간으로 정보를 검색하여 복사</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 사람이 미리 입력해 둔 답변 목록에서 선택</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 학습 데이터의 통계적 패턴으로 다음에 올 확률 높은 단어를 예측</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 수식과 알고리즘을 계산하여 정답을 도출</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong> — LLM은 수천억 개의 텍스트 패턴을 학습해 "이 단어 다음에 어떤 단어가 올 확률이 높은가"를 예측하여 자연스러운 텍스트를 생성합니다. 실시간 검색이나 계산이 아닌 학습된 패턴에서 나오는 것입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">2</span>파운데이션 모델(Foundation Model)의 특징으로 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 대규모 데이터로 사전 학습되어 다양한 태스크에 재사용 가능</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 하나의 특정 업무만 수행하도록 좁게 설계된 모델</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 소량의 데이터로 빠르게 학습되는 경량 모델</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 사람이 직접 규칙을 프로그래밍한 전문가 시스템</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — 파운데이션 모델은 수조 개의 텍스트/데이터로 대규모 사전 학습(pre-training)을 거쳐 번역, 요약, 코딩, 질문 답변 등 다양한 태스크에 활용 가능합니다. GPT-4, Claude, Gemini 등이 대표적입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">3</span>파인튜닝(Fine-tuning)이 필요한 상황으로 가장 적합한 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 범용적인 문서 요약이 필요할 때</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 일반적인 이메일 초안 작성이 필요할 때</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 영어를 한국어로 번역할 때</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 고분자 전문 용어와 규격 표현에 특화된 응답이 필요할 때</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong> — 파인튜닝은 도메인 특화 데이터로 기존 모델을 추가 학습시키는 과정입니다. PP 인장강도, 열접착 규격처럼 일반 AI가 잘 모르는 전문 영역에 특화시킬 때 필요합니다. 범용 태스크는 기본 LLM으로 충분합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">4</span>Databricks에서 다양한 LLM을 실험하고 배포할 수 있게 해주는 기능은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Delta Live Tables</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Model Serving (Foundation Model APIs)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Unity Catalog</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Databricks SQL</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Databricks의 Model Serving과 Foundation Model APIs를 통해 Meta Llama, Mistral 등 다양한 오픈소스 LLM을 API 형태로 쉽게 호출하고 비교 실험할 수 있습니다. MLflow와 연동해 모델 버전도 관리됩니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtnR" onclick="checkReview()">복습 정답 확인하기 🔄</button>
+    <div class="score-bar" id="scoreBarR">
+      <div class="score-num" id="scoreNumR"></div>
+      <div class="score-msg" id="scoreMsgR"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 12</div>
+    <h3>벡터 DB와 임베딩 개념</h3>
+    <p>의미 기반 검색의 핵심 기술</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+// ========== 오늘의 퀴즈 ==========
+const correctAnswers = [1, 2, 0, 3, 1];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!',4:'🎉 아주 잘했어요!',3:'👍 절반 이상 맞췄어요!',2:'📚 조금 더 읽어보고 재도전해봐요!',1:'💪 괜찮아요, 처음엔 다 어려워요!',0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+
+// ========== 복습 퀴즈 ==========
+const correctReview = [2, 0, 3, 1];
+let selectedR = [null, null, null, null];
+let submittedR = false;
+
+document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submittedR) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedR[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkReview() {
+  if (submittedR) return;
+  const unanswered = selectedR.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submittedR = true;
+  let score = 0;
+  document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctReview[qIdx];
+    const isCorrect = selectedR[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selectedR[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBarR').classList.add('show');
+  document.getElementById('scoreNumR').textContent = `${score}/4`;
+  const msgs = {4:'🏆 완벽해요!',3:'🎉 잘 기억하고 있어요!',2:'👍 절반 이상!',1:'📚 어제 내용 한 번 더 읽어봐요',0:'💪 괜찮아요, 다시 도전!'};
+  document.getElementById('scoreMsgR').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtnR').disabled = true;
+}
+</script>
+</body>
+</html>
