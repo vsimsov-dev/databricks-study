@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 14 · AI 에이전트란?</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+    a { color: var(--accent); }
+
+    /* Hero */
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 24px 40px; text-align: center; }
+    .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 16px; letter-spacing: .5px; }
+    .hero h1 { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    .hero p { color: #a0aec0; font-size: 15px; margin-bottom: 20px; }
+    .meta { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; font-size: 13px; color: #718096; }
+    .meta span { background: rgba(255,255,255,.08); padding: 4px 12px; border-radius: 20px; }
+
+    /* Layout */
+    .container { max-width: 720px; margin: 0 auto; padding: 36px 20px 80px; }
+    .section { background: var(--card); border-radius: 18px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 6px rgba(0,0,0,.06); border: 1.5px solid var(--border); }
+    .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 24px; }
+    h2 { font-size: 20px; font-weight: 800; margin: 28px 0 10px; color: var(--text); }
+    h3 { font-size: 17px; font-weight: 700; margin: 24px 0 8px; color: #16213e; }
+    p { font-size: 15px; color: #374151; margin-bottom: 14px; }
+
+    /* Diagram / Visual */
+    .diagram { background: linear-gradient(135deg, #1a1a2e, #0f3460); border-radius: 14px; padding: 28px 20px; margin: 20px 0; color: white; }
+    .diagram-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 20px; text-align: center; }
+    .flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; }
+    .flow-box { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; text-align: center; min-width: 90px; }
+    .flow-box.highlight { background: var(--primary); border-color: var(--primary); }
+    .flow-arrow { font-size: 18px; color: #a0aec0; }
+
+    /* Comparison table */
+    .compare-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .compare-table th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; font-size: 13px; }
+    .compare-table th:first-child { border-radius: 10px 0 0 0; }
+    .compare-table th:last-child { border-radius: 0 10px 0 0; }
+    .compare-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr:nth-child(even) td { background: #f9fafb; }
+    .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-right: 4px; }
+    .tag-red { background: #fee2e2; color: #b91c1c; }
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-blue { background: #dbeafe; color: #1d4ed8; }
+
+    /* Step cards */
+    .steps { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+    .step-card { display: flex; gap: 14px; align-items: flex-start; background: #f9fafb; border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+    .step-num { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: white; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-content h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .step-content p { font-size: 13px; color: var(--muted); margin: 0; }
+
+    /* Code block */
+    .code-block { background: #1e293b; color: #e2e8f0; border-radius: 12px; padding: 20px; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.8; margin: 16px 0; overflow-x: auto; }
+    .code-block .comment { color: #64748b; }
+    .code-block .keyword { color: #7dd3fc; }
+    .code-block .string { color: #86efac; }
+    .code-block .func { color: #fbbf24; }
+
+    /* Term grid */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 20px 0; }
+    .term-card { background: #f0f4ff; border-radius: 12px; padding: 14px 16px; border: 1.5px solid #c7d7ff; }
+    .term-card .term { font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+    .term-card .def { font-size: 13px; color: #374151; line-height: 1.5; }
+
+    /* Summary box */
+    .summary-box { background: linear-gradient(135deg, #FF3621 0%, #c42a18 100%); color: white; border-radius: 14px; padding: 20px 24px; margin: 24px 0 0; }
+    .summary-box .label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; opacity: .7; margin-bottom: 6px; }
+    .summary-box p { font-size: 16px; font-weight: 700; margin: 0; line-height: 1.5; }
+
+    /* Practice box */
+    .practice-box { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 14px; padding: 20px 24px; margin: 20px 0; }
+    .practice-box .label { font-size: 12px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .practice-box p { font-size: 14px; color: #78350f; margin: 0; line-height: 1.6; }
+
+    /* Quiz */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; border: 1.5px solid #e5e7eb; cursor: pointer; font-size: 14px; transition: all .2s; background: white; text-align: left; width: 100%; }
+    .option:hover { border-color: #3b5bdb; background: #eef2ff; }
+    .option.selected { border-color: #3b5bdb; background: #eef2ff; font-weight: 600; }
+    .option .opt-label { font-weight: 700; color: #3b5bdb; min-width: 20px; }
+    .option.correct { border-color: #10b981; background: #d1fae5; }
+    .option.wrong { border-color: #ef4444; background: #fee2e2; }
+    .option.correct .opt-label { color: #10b981; }
+    .option.wrong .opt-label { color: #ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size: 11px; width: 32px; height: 32px; border-radius: 10px; }
+    .num.o { background: #10b981; }
+    .num.x { background: #ef4444; }
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    /* Footer */
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 18px; padding: 32px; text-align: center; }
+    .next { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a0aec0; margin-bottom: 10px; }
+    .footer-card h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .footer-card p { color: #a0aec0; font-size: 14px; margin-bottom: 20px; }
+    .back-link { display: inline-block; background: rgba(255,255,255,.1); color: white; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; transition: background .2s; }
+    .back-link:hover { background: rgba(255,255,255,.2); }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Day 14 · AI Agent</div>
+  <h1>AI 에이전트란?</h1>
+  <p>스스로 계획하고 실행하는 AI 시스템</p>
+  <div class="meta">
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+    <span>🔄 복습: 4문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 개념 설명 섹션 -->
+  <div class="section">
+    <div class="section-title">오늘의 핵심 개념</div>
+
+    <p>지금까지 배운 LLM, RAG, 벡터 DB는 모두 "질문하면 답한다"는 흐름이었습니다. 사용자가 묻고, AI가 문서를 찾아 답을 만들어주는 방식이죠. 그런데 실무에서는 답을 아는 것만으로 끝나지 않는 경우가 많습니다. "이 시험 데이터를 조회하고, 기준과 비교하고, 이상치가 있으면 보고서 초안까지 써줘"처럼 <strong>여러 단계를 스스로 이어서 처리</strong>해야 하는 일들이죠. 이런 다단계 작업을 사람의 개입 없이 스스로 계획하고 실행하는 AI 시스템을 <strong>AI 에이전트(AI Agent)</strong>라고 부릅니다.</p>
+
+    <p>오늘은 챗봇과 에이전트가 무엇이 다른지, 에이전트가 어떤 방식으로 "생각하고 행동"하는지, 그리고 고분자 제품기술팀 업무에 어떻게 적용할 수 있을지 살펴봅니다.</p>
+
+    <h3>🤖 챗봇 vs 에이전트 — "답만 하는 사람" vs "직접 처리하는 사람"</h3>
+    <p>비유하자면 챗봇은 <strong>전화 상담원</strong>과 비슷합니다. 질문하면 아는 선에서 답을 주지만, 그 이상의 행동은 하지 않습니다. 반면 AI 에이전트는 <strong>일 잘하는 비서</strong>에 가깝습니다. "다음 주 회의 준비해줘"라고 하면, 필요한 자료를 스스로 찾아보고, 일정을 확인하고, 초안까지 만들어 가져다줍니다. 즉 에이전트는 목표만 받으면 <strong>계획 → 도구 실행 → 결과 확인</strong>을 스스로 반복하며 일을 끝냅니다.</p>
+
+    <table class="compare-table">
+      <tr>
+        <th>구분</th>
+        <th>일반 챗봇 / LLM</th>
+        <th>AI 에이전트</th>
+      </tr>
+      <tr>
+        <td><strong>동작 방식</strong></td>
+        <td><span class="tag tag-red">❌</span> 한 번 질문 → 한 번 답변</td>
+        <td><span class="tag tag-green">✅</span> 목표 → 여러 단계를 스스로 계획·실행</td>
+      </tr>
+      <tr>
+        <td><strong>외부 행동</strong></td>
+        <td><span class="tag tag-red">❌</span> 텍스트 답변만 생성</td>
+        <td><span class="tag tag-green">✅</span> 도구(DB 조회, 계산, API 호출 등) 실제 실행</td>
+      </tr>
+      <tr>
+        <td><strong>중간 판단</strong></td>
+        <td>없음</td>
+        <td>결과를 보고 다음 행동을 스스로 결정</td>
+      </tr>
+      <tr>
+        <td><strong>예시</strong></td>
+        <td>"PP 열접착 강도 기준이 뭐야?" → 텍스트 답변</td>
+        <td>"이번 로트 시험 결과 기준 미달인지 확인하고 보고서 써줘" → 조회+비교+작성까지 수행</td>
+      </tr>
+    </table>
+
+    <h3>🔁 에이전트의 핵심 루프 — Plan → Act → Observe</h3>
+    <p>AI 에이전트가 작동하는 기본 패턴은 "계획하고 → 행동하고 → 결과를 관찰해서 → 다시 계획한다"의 반복입니다. 이를 흔히 <strong>ReAct(Reasoning + Acting)</strong> 패턴이라 부릅니다. 사람이 요리할 때 "간을 보고(관찰) → 싱거우면 소금을 더 넣는(행동) 것"을 반복하는 것과 비슷합니다. 에이전트도 한 번의 행동으로 끝내지 않고, 결과를 확인한 뒤 필요하면 다음 행동을 다시 판단합니다.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">AI 에이전트의 동작 루프</div>
+      <div class="flow">
+        <div class="flow-box highlight">사용자 목표</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">계획 (Plan)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">도구 실행 (Act)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">결과 관찰 (Observe)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">최종 답변</div>
+      </div>
+      <p style="text-align:center; font-size:12px; color:#a0aec0; margin-top:14px; margin-bottom:0;">목표가 달성될 때까지 계획→실행→관찰을 반복합니다</p>
+    </div>
+
+    <h3>🛠️ 도구 사용(Tool Use) — 에이전트의 "손과 발"</h3>
+    <p>에이전트가 실제로 일을 처리하려면 텍스트 생성만으로는 부족합니다. 그래서 데이터 조회, 계산, 파일 검색, API 호출 같은 <strong>외부 기능("도구")을 함수 형태로 호출</strong>할 수 있어야 합니다. LLM이 "지금은 데이터베이스 조회 도구를 써야겠다"고 판단하면 해당 함수를 실행하고, 그 결과를 다시 LLM에 전달해 다음 판단에 활용합니다.</p>
+
+    <div class="code-block">
+<span class="comment"># AI 에이전트가 도구를 호출하는 개념 코드 (의사코드)</span>
+
+<span class="keyword">def</span> <span class="func">agent_loop</span>(goal):
+    plan = llm.<span class="func">think</span>(goal)          <span class="comment"># 1. 계획 수립</span>
+    <span class="keyword">while</span> <span class="keyword">not</span> plan.finished:
+        action = llm.<span class="func">decide_next_action</span>(plan)
+        result = tools.<span class="func">call</span>(action.tool_name, action.args)  <span class="comment"># 2. 도구 실행</span>
+        plan = llm.<span class="func">update_plan</span>(plan, result)   <span class="comment"># 3. 결과 관찰 & 재계획</span>
+    <span class="keyword">return</span> llm.<span class="func">final_answer</span>(plan)
+    </div>
+
+    <h3>📶 자율성의 수준 — 어디까지 맡길 것인가</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>단순 응답형</h4>
+          <p>질문 하나에 답 하나. 도구 없이 지식만으로 답변 (일반 챗봇 수준).</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>단일 도구 호출형</h4>
+          <p>필요할 때 도구 하나를 호출해 정보를 가져온 뒤 답변 (예: DB 조회 후 답변).</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>다단계 자율 실행형</h4>
+          <p>여러 도구를 순서대로 스스로 호출하며 목표를 달성할 때까지 반복 (진정한 의미의 "에이전트").</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>🧪 고분자 제품기술팀에서의 활용 예시</h3>
+    <p>고분자 제품 개발 업무에서는 시험 데이터 조회, 규격 대조, 보고서 작성처럼 여러 단계를 거치는 반복 업무가 많습니다. AI 에이전트를 활용하면 "이번 주 CPP 열접착 강도 시험 결과를 불러와서 사내 기준과 비교하고, 기준 미달 건이 있으면 표로 정리해줘"처럼 한 번의 요청으로 조회·비교·정리까지 이어서 처리할 수 있습니다. 안전환경 업무에서는 "이번 달 신규 화학물질 MSDS를 확인하고, 유해성 분류가 이전과 달라졌으면 안전교육 자료 수정이 필요한 항목만 정리해줘"와 같은 다단계 작업에도 적용할 수 있습니다.</p>
+
+    <div class="practice-box">
+      <div class="label">💡 실무 적용 아이디어</div>
+      <p>압출코팅 PP 라인의 일별 품질 데이터를 자동 조회하는 도구, 사내 규격 문서를 검색하는 도구, 보고서 초안을 작성하는 도구를 각각 만들어 에이전트에 연결하면, "오늘자 이상치 확인하고 보고서 초안 만들어줘" 한 마디로 전체 흐름을 자동화할 수 있습니다.</p>
+    </div>
+
+    <h3>🔑 핵심 용어 카드</h3>
+    <div class="term-grid">
+      <div class="term-card">
+        <div class="term">AI 에이전트</div>
+        <div class="def">목표를 받으면 스스로 계획을 세우고 도구를 실행하며 작업을 끝까지 수행하는 AI 시스템.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">ReAct 패턴</div>
+        <div class="def">추론(Reasoning)과 행동(Acting)을 번갈아 반복하는 에이전트의 대표적인 동작 방식.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">도구 사용(Tool Use)</div>
+        <div class="def">에이전트가 DB 조회, 계산, API 호출 등 외부 기능을 함수 형태로 실행하는 것.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">자율성 수준</div>
+        <div class="def">단순 응답부터 다단계 자율 실행까지, 에이전트가 스스로 판단하는 범위의 정도.</div>
+      </div>
+      <div class="term-card">
+        <div class="term">오케스트레이션</div>
+        <div class="def">여러 도구·모델 호출 순서를 조율해 하나의 목표로 이어지게 만드는 과정.</div>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <div class="label">📌 한 줄 요약</div>
+      <p>AI 에이전트는 질문에 답만 하는 챗봇을 넘어, 목표를 받으면 계획→도구 실행→결과 관찰을 스스로 반복하며 일을 끝까지 처리하는 AI 시스템입니다.</p>
+    </div>
+  </div>
+
+  <!-- 오늘의 퀴즈 -->
+  <div class="section quiz-section">
+    <div class="section-title">오늘의 퀴즈 — 5문제</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>AI 에이전트(AI Agent)를 가장 정확하게 설명한 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 정해진 시나리오만 따라 답하는 규칙 기반 챗봇</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 목표를 스스로 계획하고, 필요한 도구를 호출해 실행까지 하는 AI 시스템</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 사람이 미리 작성한 문서를 검색만 하는 프로그램</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 데이터를 저장만 하는 데이터베이스</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — AI 에이전트는 목표만 주어지면 스스로 계획을 세우고, 필요한 도구를 호출해 실행하며, 결과를 확인해 다음 행동을 판단하는 AI 시스템입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">2</span>에이전트의 동작 루프(Plan → Act → Observe)에서 'Act' 단계가 의미하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 계획을 세우는 단계</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 실제로 도구(함수, API)를 호출해 작업을 수행하는 단계</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 결과를 사람에게 보고만 하는 단계</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 아무 것도 하지 않고 대기하는 단계</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Act 단계는 에이전트가 실제로 도구(데이터 조회, 계산, API 호출 등)를 호출해 작업을 수행하는 단계입니다. 이후 Observe 단계에서 그 결과를 관찰합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">3</span>AI 에이전트가 '도구(Tool)'를 사용한다는 것은 구체적으로 무엇을 의미하나요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 마우스와 키보드를 직접 조작한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 검색, 계산, DB 조회, API 호출 등 외부 기능을 함수 형태로 실행한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 다른 AI 모델을 처음부터 새로 학습시킨다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 사용자의 화면을 녹화한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — 도구 사용은 에이전트가 검색, 계산기, DB 조회, API 호출 같은 외부 기능을 함수 형태로 직접 실행해 실질적인 작업을 처리하는 것을 말합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">4</span>에이전트의 자율성 수준이 높아질수록 나타나는 특징은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 사람의 개입 없이 여러 단계를 스스로 판단해 이어서 실행한다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 항상 한 문장만 답하고 끝난다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 도구를 전혀 사용하지 않는다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 계획 없이 무작위로 답한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — 자율성 수준이 높아질수록 에이전트는 단순 응답을 넘어, 사람의 추가 개입 없이 여러 단계를 스스로 판단하고 이어서 실행할 수 있습니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">5</span>고분자 제품기술팀 실무에 AI 에이전트를 적용한다면 가장 적절한 활용 예시는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 시험 데이터 조회 → 기준 비교 → 이상치 시 보고서 초안 작성까지 자동으로 이어서 수행</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 단순히 PDF 파일을 열어 보여주기만 함</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 이메일 색깔을 바꿔줌</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 사람이 모든 단계를 일일이 다시 입력해야만 동작함</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — AI 에이전트의 강점은 조회·비교·작성처럼 여러 단계를 하나의 목표 아래 자동으로 이어서 처리할 수 있다는 점입니다. 고분자 시험·규격 비교 업무에 특히 적합합니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">정답 확인하기 ✅</button>
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 복습 섹션 (Day 13: Genie (Text to SQL) 개념과 활용) -->
+  <div class="section review-section">
+    <div class="section-title">🔄 어제 배운 내용 복습 — Genie (Text to SQL) 개념과 활용</div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">1</span>Databricks Genie의 핵심 기능으로 가장 알맞은 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 자연어 질문을 SQL로 자동 변환해 데이터를 조회해준다 (Text-to-SQL)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 이미지를 자동으로 생성한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 클러스터를 자동으로 삭제한다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 코드를 다른 프로그래밍 언어로 번역한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — Genie는 사용자가 자연어로 질문하면 이를 SQL 쿼리로 자동 변환해 데이터를 조회해주는 Text-to-SQL 도구입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">2</span>Genie가 더 정확한 답변을 하도록 도와주는 요소는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 테이블·컬럼 설명, 샘플 질문 등 컨텍스트(메타데이터)를 미리 등록해두는 것</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 클러스터 크기를 무조건 최대로 키우는 것</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 인터넷 속도를 높이는 것</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 비밀번호를 자주 바꾸는 것</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — Genie는 테이블·컬럼에 대한 설명과 샘플 질문 같은 컨텍스트를 등록해둘수록 자연어 질문을 더 정확한 SQL로 변환합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">3</span>Genie는 주로 누구를 위해 설계된 도구인가요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> SQL 전문가만</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> SQL을 몰라도 데이터를 탐색하고 싶은 현업(비즈니스) 사용자</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 데이터베이스 관리자만</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 하드웨어 엔지니어만</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong> — Genie는 SQL 문법을 몰라도 자연어로 질문해 데이터를 탐색할 수 있도록, 현업·비즈니스 사용자를 위해 설계된 도구입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num" style="background:#6b7280;">4</span>Genie는 Databricks의 어떤 제품 영역에 속하나요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> AI/BI (분석·대시보드 도구군)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 네트워크 보안 도구</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 클러스터 하드웨어 관리 도구</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 파일 압축 도구</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong> — Genie는 Databricks AI/BI 제품군에 속하며, 자연어 기반 데이터 조회와 분석을 지원합니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtnR" onclick="checkReview()">복습 정답 확인하기 🔄</button>
+    <div class="score-bar" id="scoreBarR">
+      <div class="score-num" id="scoreNumR"></div>
+      <div class="score-msg" id="scoreMsgR"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">내일 예고 · Day 15</div>
+    <h3>MCP (Model Context Protocol) 개념</h3>
+    <p>AI 에이전트와 도구를 연결하는 표준</p>
+    <a class="back-link" href="index.html">← 강의 목록으로</a>
+  </div>
+
+</div>
+
+<script>
+// ========== 오늘의 퀴즈 ==========
+const correctAnswers = [1, 1, 1, 0, 0];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!',4:'🎉 아주 잘했어요!',3:'👍 절반 이상 맞췄어요!',2:'📚 조금 더 읽어보고 재도전해봐요!',1:'💪 괜찮아요, 처음엔 다 어려워요!',0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+
+// ========== 복습 퀴즈 ==========
+const correctReview = [0, 0, 1, 0];
+let selectedR = [null, null, null, null];
+let submittedR = false;
+
+document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submittedR) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedR[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkReview() {
+  if (submittedR) return;
+  const unanswered = selectedR.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submittedR = true;
+  let score = 0;
+  document.querySelectorAll('.review-section .quiz-item').forEach((item, qIdx) => {
+    const correct = correctReview[qIdx];
+    const isCorrect = selectedR[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selectedR[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBarR').classList.add('show');
+  document.getElementById('scoreNumR').textContent = `${score}/4`;
+  const msgs = {4:'🏆 완벽해요!',3:'🎉 잘 기억하고 있어요!',2:'👍 절반 이상!',1:'📚 어제 내용 한 번 더 읽어봐요',0:'💪 괜찮아요, 다시 도전!'};
+  document.getElementById('scoreMsgR').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtnR').disabled = true;
+}
+</script>
+</body>
+</html>
