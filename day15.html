@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 15 — MCP (Model Context Protocol) 개념</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    @media(max-width: 580px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 14px; padding: 18px; }
+    .feature-card .f-icon { font-size: 28px; margin-bottom: 8px; }
+    .feature-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+    .term-card { background: #fafafa; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-word { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .term-card .t-def { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; margin: 20px 0; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px; }
+    .summary-box .s-text { font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .summary-box .s-text span { color: #FFA500; }
+
+    /* 아키텍처 다이어그램 */
+    .arch-diagram { margin: 24px 0; display: flex; flex-direction: column; gap: 10px; }
+    .arch-row { display: flex; align-items: center; gap: 12px; }
+    .arch-box { flex: 1; border-radius: 12px; padding: 14px 18px; font-size: 14px; font-weight: 600; text-align: center; }
+    .arch-box.client { background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e40af; }
+    .arch-box.host { background: #fff7ed; border: 2px solid var(--primary); color: #9a3412; }
+    .arch-box.server { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; }
+    .arch-arrow { font-size: 20px; color: var(--muted); text-align: center; flex-shrink: 0; }
+    .arch-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin-top: 4px; }
+
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o { background:#10b981; }
+    .num.x { background:#ef4444; }
+
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 18px; font-weight: 700; color: #FFA500; }
+    .footer-card p { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #a0aec0; font-size: 13px; text-decoration: none; margin-top: 16px; transition: color .2s; }
+    .back-link:hover { color: white; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 15 · MCP</div>
+  <h1>MCP (Model Context Protocol) 개념</h1>
+  <p>AI 에이전트와 외부 도구를 연결하는 표준 프로토콜</p>
+  <div class="meta">
+    <span>📅 2026년 6월 25일</span>
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">개념 설명</div>
+    <div class="body-text">
+
+      <h3>MCP란 무엇인가?</h3>
+      <p>
+        AI가 점점 똑똑해지고 있지만, 혼자 할 수 있는 일은 제한적입니다. 회사 ERP 시스템의 데이터를 가져오거나, 사내 데이터베이스를 조회하거나, 이메일을 발송하려면 AI가 외부 도구와 대화할 수 있어야 합니다. 그런데 지금까지는 각 AI 시스템마다 연동 방식이 달라 개발 비용이 컸습니다.
+      </p>
+      <p>
+        <strong>MCP(Model Context Protocol)</strong>는 Anthropic이 제안한 <strong>AI 에이전트와 외부 도구·데이터를 연결하는 표준 프로토콜</strong>입니다. USB 규격처럼, MCP를 지원하면 어떤 AI 클라이언트와 어떤 서버든 공통 방식으로 연결할 수 있습니다. 2024년 말 오픈소스로 공개된 이후 빠르게 생태계가 확장되고 있습니다.
+      </p>
+
+      <div class="highlight">
+        💡 MCP를 한 마디로 표현하면: <strong>"AI 에이전트를 위한 USB 표준 규격"</strong>. 한 번 만들면 어디서든 꽂아 쓸 수 있습니다.
+      </div>
+
+      <h3>왜 MCP가 필요한가?</h3>
+      <p>
+        기존 방식에서는 AI를 CRM 시스템에 연결하려면 별도의 커스텀 통합 코드가 필요했고, 다른 AI로 바꾸면 처음부터 다시 개발해야 했습니다. MCP는 이 문제를 표준화로 해결합니다.
+      </p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="f-icon">🔌</div>
+          <h4>표준화된 연결</h4>
+          <p>MCP를 지원하는 AI라면 MCP Server에 바로 연결됩니다. 커스텀 통합 코드가 필요 없습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">♻️</div>
+          <h4>재사용 가능</h4>
+          <p>한 번 만든 MCP Server는 Claude, GPT 등 여러 AI에서 재사용할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🔒</div>
+          <h4>보안 경계 명확</h4>
+          <p>어떤 도구에 어떤 권한을 줄지 서버 단에서 명시적으로 정의합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🌐</div>
+          <h4>오픈 생태계</h4>
+          <p>GitHub, Slack, 데이터베이스 등 수백 개의 MCP Server가 이미 공개되어 있습니다.</p>
+        </div>
+      </div>
+
+      <h3>MCP Server / Client 구조</h3>
+      <p>
+        MCP는 <strong>Host(AI 애플리케이션)</strong>, <strong>Client(프로토콜 처리 레이어)</strong>, <strong>Server(외부 도구 제공자)</strong> 세 가지로 구성됩니다.
+      </p>
+      <div class="arch-diagram">
+        <div class="arch-row">
+          <div class="arch-box client">🤖 AI 클라이언트 (Claude Desktop, IDE 등)<br><small style="font-weight:400">MCP Client를 내장한 호스트 애플리케이션</small></div>
+        </div>
+        <div style="text-align:center; font-size:20px; color:var(--muted);">⇅ MCP 프로토콜 (JSON-RPC)</div>
+        <div class="arch-row" style="gap:10px;">
+          <div class="arch-box server">🗄️ MCP Server<br><small style="font-weight:400">ERP 연동</small></div>
+          <div class="arch-box server">🔬 MCP Server<br><small style="font-weight:400">물성 DB 조회</small></div>
+          <div class="arch-box server">📧 MCP Server<br><small style="font-weight:400">이메일 발송</small></div>
+        </div>
+      </div>
+      <p>
+        MCP Server는 세 가지 기능을 제공합니다: <strong>Tools</strong>(AI가 실행할 수 있는 함수), <strong>Resources</strong>(읽을 수 있는 데이터), <strong>Prompts</strong>(재사용 가능한 프롬프트 템플릿). AI는 필요한 기능을 MCP Server에 요청하고 결과를 받아 처리합니다.
+      </p>
+
+      <h3>Databricks에서의 MCP 활용</h3>
+      <p>
+        Databricks는 2025년부터 <strong>AI/BI Genie, Unity Catalog, DBRX 등의 기능을 MCP Server로 노출</strong>하기 시작했습니다. 이를 통해 개발자가 Claude나 다른 AI 도구에서 직접 Databricks 데이터를 조회하거나, Delta Lake 테이블을 탐색하거나, Spark 잡을 실행할 수 있게 됩니다. 기업 데이터를 AI 에이전트와 안전하게 연결하는 인프라 역할을 MCP가 담당하는 것입니다.
+      </p>
+
+      <div class="info-box">
+        <strong>🏭 고분자팀 실제 활용 시나리오</strong>
+        영업팀으로부터 "CPP 필름 물성 규격 자료 보내줘"라는 요청이 오면, AI 에이전트가 MCP를 통해 ① 사내 ERP에서 고객 정보 조회 → ② 물성 DB에서 해당 제품 스펙 조회 → ③ 조회된 데이터로 기술지원 보고서 자동 생성 → ④ 이메일 초안 작성까지 한 번에 처리할 수 있습니다. 각 시스템에 MCP Server 하나씩만 만들면 됩니다.
+      </div>
+
+      <h3>핵심 용어 카드</h3>
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="t-word">MCP</div>
+          <div class="t-def">Model Context Protocol. AI 에이전트와 외부 도구·데이터를 연결하는 Anthropic 표준 프로토콜</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">MCP Server</div>
+          <div class="t-def">특정 도구나 데이터 소스(ERP, DB 등)의 기능을 MCP 규격으로 노출하는 서버</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">MCP Client</div>
+          <div class="t-def">AI 애플리케이션 안에서 MCP Server와 통신을 처리하는 레이어</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Tools</div>
+          <div class="t-def">MCP Server가 AI에게 제공하는 실행 가능한 함수 (예: 데이터 조회, 이메일 발송)</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Resources</div>
+          <div class="t-def">MCP Server가 AI에게 제공하는 읽기 전용 데이터 (예: 파일, DB 레코드)</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-label">📌 한 줄 요약</div>
+        <div class="s-text">
+          MCP는 AI 에이전트가 <span>사내 ERP, 데이터베이스, 이메일</span> 등 외부 도구와<br>
+          표준화된 방식으로 대화할 수 있게 해주는 연결 프로토콜입니다.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section">
+    <div class="section-title">오늘의 퀴즈</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">1</span>MCP(Model Context Protocol)의 핵심 역할은 무엇인가요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> AI 모델의 학습 데이터를 관리하는 규격</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 클라우드 서버 간 데이터를 복제하는 프로토콜</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> AI 에이전트와 외부 도구·데이터를 표준화된 방식으로 연결하는 프로토콜</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> SQL 쿼리를 자동으로 최적화하는 엔진</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>MCP는 AI 에이전트가 ERP, 데이터베이스, 이메일 등 외부 시스템과 표준화된 방식으로 연결할 수 있게 해주는 프로토콜입니다. AI 모델 학습이나 SQL 최적화와는 관계가 없습니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">2</span>MCP를 "USB 표준 규격"에 비유하는 이유로 가장 적절한 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 데이터 전송 속도가 USB처럼 빠르기 때문에</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 한 번 만들면 여러 AI 클라이언트에서 재사용할 수 있는 표준이기 때문에</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 물리적 케이블 없이 무선으로 연결하기 때문에</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Anthropic이 하드웨어 제조사와 협력했기 때문에</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>USB처럼 표준화된 규격이기 때문에, MCP Server를 한 번 만들면 Claude, GPT 등 MCP를 지원하는 어떤 AI에서도 재사용할 수 있습니다. 이것이 커스텀 통합 대비 핵심 장점입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>MCP Server가 AI 클라이언트에게 제공하는 세 가지 기능이 올바르게 나열된 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Tools (실행 가능한 함수), Resources (읽기 전용 데이터), Prompts (프롬프트 템플릿)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Models (AI 모델), Datasets (학습 데이터), Pipelines (처리 파이프라인)</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Clusters (클러스터), Jobs (배치 잡), Notebooks (노트북)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Tables (테이블), Views (뷰), Functions (함수)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong><br>MCP Server는 Tools(AI가 실행할 수 있는 함수), Resources(읽을 수 있는 데이터), Prompts(재사용 가능한 프롬프트 템플릿) 세 가지 기능 유형을 AI 클라이언트에게 제공합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>고분자팀에서 MCP를 활용해 기술지원 보고서를 자동 생성할 때, AI 에이전트가 순서대로 수행하는 작업은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 이메일 발송 → ERP 조회 → 물성 DB 조회 → 보고서 생성</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 보고서 생성 → 물성 DB 조회 → ERP 조회 → 이메일 발송</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 물성 DB 조회 → ERP 조회 → 이메일 발송 → 보고서 생성</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> ERP에서 고객 정보 조회 → 물성 DB에서 스펙 조회 → 보고서 자동 생성 → 이메일 초안 작성</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong><br>영업 요청이 오면 AI가 MCP를 통해 ① ERP에서 고객 정보 조회 → ② 물성 DB에서 제품 스펙 조회 → ③ 보고서 자동 생성 → ④ 이메일 초안 작성 순서로 처리합니다. 데이터를 먼저 수집한 뒤 문서를 작성하는 흐름입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">5</span>Databricks가 MCP Server를 제공하면 어떤 이점이 생기나요?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Databricks 클러스터 비용이 자동으로 절감된다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Claude 등 AI 도구에서 직접 Delta Lake 테이블을 조회하거나 Spark 잡을 실행할 수 있다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Delta Lake 데이터가 자동으로 정제된다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 별도의 코딩 없이 ML 모델이 자동 학습된다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>Databricks가 Unity Catalog, AI/BI Genie 등의 기능을 MCP Server로 노출하면, Claude 같은 AI 클라이언트에서 직접 Databricks 데이터 조회, Delta Lake 테이블 탐색, Spark 잡 실행 등을 수행할 수 있습니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">✅ 채점하기</button>
+
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">NEXT UP</div>
+    <h3>Day 16 — 프롬프트 엔지니어링 기초</h3>
+    <p>AI를 더 잘 활용하기 위한 프롬프트 작성 원칙과 기법을 배울 예정이에요!</p>
+    <a class="back-link" href="index.html">← 강의 목록으로 돌아가기</a>
+  </div>
+
+</div>
+
+<script>
+const correctAnswers = [2, 1, 0, 3, 1];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+</script>
+
+</body>
+</html>

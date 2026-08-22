@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 19 — Databricks 클러스터와 컴퓨트 심화</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    @media(max-width: 580px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-card { border-radius: 14px; padding: 20px; }
+    .compare-card.blue { background: #eff6ff; border: 1.5px solid #93c5fd; }
+    .compare-card.green { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .compare-card .c-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .compare-card.blue .c-title { color: #1e40af; }
+    .compare-card.green .c-title { color: #16a34a; }
+    .compare-card ul { font-size: 13px; color: #374151; padding-left: 18px; }
+    .compare-card ul li { margin-bottom: 6px; }
+
+    .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 20px 0; }
+    @media(max-width: 580px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 14px; padding: 18px; }
+    .feature-card .f-icon { font-size: 28px; margin-bottom: 8px; }
+    .feature-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+    .term-card { background: #fafafa; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-word { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .term-card .t-def { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; margin: 20px 0; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px; }
+    .summary-box .s-text { font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .summary-box .s-text span { color: #FFA500; }
+
+    /* 오토스케일링 시각화 */
+    .scale-diagram { margin: 20px 0; background: #fafafa; border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; }
+    .scale-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 14px; }
+    .scale-rows { display: flex; flex-direction: column; gap: 8px; }
+    .scale-row { display: flex; align-items: center; gap: 10px; }
+    .scale-time { font-size: 12px; color: var(--muted); font-weight: 700; width: 58px; flex-shrink: 0; }
+    .scale-nodes { display: flex; gap: 5px; }
+    .node { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .node.on { background: #3b5bdb; color: white; }
+    .node.off { background: #e5e7eb; color: #9ca3af; }
+    .scale-desc { font-size: 12px; color: var(--muted); margin-left: 6px; }
+
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o { background:#10b981; }
+    .num.x { background:#ef4444; }
+
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 18px; font-weight: 700; color: #FFA500; }
+    .footer-card p { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #a0aec0; font-size: 13px; text-decoration: none; margin-top: 16px; transition: color .2s; }
+    .back-link:hover { color: white; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 19 · Cluster & Compute</div>
+  <h1>Databricks 클러스터와 컴퓨트 심화</h1>
+  <p>올바른 클러스터 선택으로 성능과 비용을 동시에 잡는다</p>
+  <div class="meta">
+    <span>📅 2026년 6월 29일</span>
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">개념 설명</div>
+    <div class="body-text">
+
+      <h3>All-Purpose 클러스터 vs Job 클러스터</h3>
+      <p>
+        Databricks에서 코드를 실행하려면 컴퓨팅 자원인 <strong>클러스터</strong>가 필요합니다. 클러스터는 용도에 따라 크게 두 종류로 나뉩니다. 어떤 클러스터를 언제 쓰느냐가 비용과 효율에 큰 차이를 만듭니다.
+      </p>
+
+      <div class="compare-grid">
+        <div class="compare-card blue">
+          <div class="c-title">🖥️ All-Purpose 클러스터</div>
+          <ul>
+            <li>대화형 노트북 작업에 최적화</li>
+            <li>여러 사용자가 동시에 공유 가능</li>
+            <li>수동으로 시작·종료</li>
+            <li>탐색적 분석, 개발, 디버깅에 적합</li>
+            <li>비용: 상대적으로 높음 (상시 대기)</li>
+          </ul>
+        </div>
+        <div class="compare-card green">
+          <div class="c-title">⚙️ Job 클러스터</div>
+          <ul>
+            <li>자동화된 배치 작업 전용</li>
+            <li>잡 실행 시 생성, 완료 후 자동 삭제</li>
+            <li>단일 잡만 처리 후 종료</li>
+            <li>야간 배치, 파이프라인 스케줄링에 적합</li>
+            <li>비용: 낮음 (실행 시간만 과금)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="highlight">
+        💡 원칙: <strong>개발·탐색은 All-Purpose</strong>로 편하게, <strong>정기 배치는 Job 클러스터</strong>로 비용 절감. 이 구분만 지켜도 클라우드 비용을 크게 줄일 수 있습니다.
+      </div>
+
+      <h3>오토스케일링 (Autoscaling) 원리</h3>
+      <p>
+        작업 부하는 항상 일정하지 않습니다. 데이터가 적을 때는 워커 2개로 충분하지만, 대규모 분석 실행 시에는 10개가 필요할 수 있습니다. <strong>오토스케일링</strong>은 클러스터가 현재 부하를 보고 워커 수를 자동으로 늘리거나 줄이는 기능입니다.
+      </p>
+
+      <div class="scale-diagram">
+        <div class="scale-title">🔄 오토스케일링 동작 예시 (최소 2개 ~ 최대 8개 워커)</div>
+        <div class="scale-rows">
+          <div class="scale-row">
+            <div class="scale-time">오전 9시</div>
+            <div class="scale-nodes">
+              <div class="node on">W</div><div class="node on">W</div>
+              <div class="node off">-</div><div class="node off">-</div><div class="node off">-</div>
+            </div>
+            <div class="scale-desc">노트북 접속 — 최소 워커 유지</div>
+          </div>
+          <div class="scale-row">
+            <div class="scale-time">오전 10시</div>
+            <div class="scale-nodes">
+              <div class="node on">W</div><div class="node on">W</div><div class="node on">W</div><div class="node on">W</div>
+              <div class="node off">-</div>
+            </div>
+            <div class="scale-desc">분석 쿼리 실행 — 워커 4개로 확장</div>
+          </div>
+          <div class="scale-row">
+            <div class="scale-time">낮 12시</div>
+            <div class="scale-nodes">
+              <div class="node on">W</div><div class="node on">W</div><div class="node on">W</div><div class="node on">W</div><div class="node on">W</div>
+            </div>
+            <div class="scale-desc">대규모 ML 학습 — 워커 5개로 확장</div>
+          </div>
+          <div class="scale-row">
+            <div class="scale-time">오후 3시</div>
+            <div class="scale-nodes">
+              <div class="node on">W</div><div class="node on">W</div>
+              <div class="node off">-</div><div class="node off">-</div><div class="node off">-</div>
+            </div>
+            <div class="scale-desc">유휴 상태 — 자동 축소로 비용 절감</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>클러스터 정책과 비용 최적화</h3>
+      <p>
+        대규모 조직에서는 누구나 아무 사양의 클러스터를 만들 수 있으면 비용이 폭발합니다. <strong>클러스터 정책(Cluster Policy)</strong>은 관리자가 사전에 허용 가능한 인스턴스 타입, 최대 워커 수, 자동 종료 시간 등을 규정으로 정해놓는 기능입니다. 개발자는 정책 범위 안에서만 클러스터를 생성할 수 있습니다.
+      </p>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="f-icon">💸</div>
+          <h4>자동 종료 설정</h4>
+          <p>비활성 상태가 N분 지속되면 클러스터를 자동으로 꺼서 방치 비용을 막습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">📋</div>
+          <h4>인스턴스 타입 제한</h4>
+          <p>고비용 GPU 인스턴스는 ML팀만 사용하도록 정책으로 제한할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">📏</div>
+          <h4>최대 워커 수 제한</h4>
+          <p>실수로 100개짜리 클러스터를 만드는 것을 방지합니다.</p>
+        </div>
+        <div class="feature-card">
+          <div class="f-icon">🏷️</div>
+          <h4>태그 강제 적용</h4>
+          <p>팀·프로젝트 태그를 필수로 지정해 비용 귀속을 명확하게 추적합니다.</p>
+        </div>
+      </div>
+
+      <h3>Spot Instance — 비용을 70%까지 절감하는 방법</h3>
+      <p>
+        클라우드 제공사(AWS, Azure, GCP)는 여유 서버를 <strong>Spot Instance(스팟 인스턴스)</strong>로 저렴하게 제공합니다. On-Demand 대비 60~80% 저렴하지만, 클라우드 제공사가 필요하면 언제든 회수(중단)할 수 있습니다. 이 때문에 <strong>중단되면 안 되는 대화형 작업</strong>에는 적합하지 않지만, <strong>체크포인트를 사용하는 배치 잡</strong>에는 매우 효율적입니다.
+      </p>
+
+      <div class="info-box">
+        <strong>🏭 고분자팀 클러스터 전략</strong>
+        <strong>탐색적 분석(낮 시간):</strong> All-Purpose 클러스터 1개를 팀이 공유. 오토스케일링으로 2~8 워커 자동 조정. 비활성 60분 시 자동 종료.<br><br>
+        <strong>야간 배치 분석(새벽 2시):</strong> 전월 PP·PE·EAA 물성 데이터 집계 잡을 Job 클러스터 + Spot Instance로 실행. On-Demand 대비 약 65% 비용 절감. 잡 완료 후 클러스터 자동 삭제.
+      </div>
+
+      <h3>핵심 용어 카드</h3>
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="t-word">All-Purpose 클러스터</div>
+          <div class="t-def">여러 사용자가 공유하는 대화형 노트북용 클러스터. 개발·탐색에 적합</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Job 클러스터</div>
+          <div class="t-def">자동화 배치 잡 전용 클러스터. 잡 완료 후 자동 삭제되어 비용 효율적</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">오토스케일링</div>
+          <div class="t-def">부하에 따라 워커 노드 수를 자동으로 늘리거나 줄이는 기능</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Spot Instance</div>
+          <div class="t-def">클라우드의 여유 서버를 저렴하게 사용. 언제든 회수될 수 있으나 비용이 60~80% 저렴</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">클러스터 정책</div>
+          <div class="t-def">관리자가 허용 인스턴스 타입, 최대 워커 수 등을 규정해 비용을 통제하는 기능</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-label">📌 한 줄 요약</div>
+        <div class="s-text">
+          <span>개발은 All-Purpose</span>, 배치는 <span>Job + Spot Instance</span>로 나누면<br>
+          성능 저하 없이 클라우드 비용을 획기적으로 줄일 수 있습니다.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section">
+    <div class="section-title">오늘의 퀴즈</div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">1</span>Databricks Job 클러스터의 가장 큰 특징은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 여러 사용자가 동시에 공유할 수 있다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 잡 실행 시 생성되고 완료 후 자동으로 삭제된다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 노트북 기반 대화형 작업에 최적화되어 있다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> GPU 인스턴스만 사용할 수 있다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>Job 클러스터는 자동화 배치 잡 실행을 위해 시작 시 생성되고, 잡이 완료되면 자동으로 삭제됩니다. 실행 시간만큼만 과금되어 비용 효율적입니다. 대화형 공유 작업에는 All-Purpose 클러스터가 적합합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">2</span>고분자팀 탐색적 데이터 분석(EDA)에 적합한 클러스터 구성은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Spot Instance 전용 Job 클러스터</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 고정 워커 20개짜리 클러스터</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 팀 공유 All-Purpose 클러스터 + 오토스케일링 + 자동 종료</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 1개 워커 고정 클러스터 (비용 최소화)</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>탐색적 분석은 여러 팀원이 노트북으로 실험하는 대화형 작업입니다. 팀 공유 All-Purpose 클러스터에 오토스케일링으로 부하에 맞게 워커를 조정하고, 비활성 시 자동 종료 설정으로 방치 비용을 막는 구성이 최적입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">3</span>오토스케일링을 사용했을 때의 장점은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 클러스터를 수동으로 관리할 필요가 없어진다 (정답 아님 — 종료는 여전히 관리 필요)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 항상 최대 워커 수를 유지해 속도를 극대화한다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Spot Instance를 자동으로 On-Demand로 교체해준다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 부하에 따라 워커 수를 자동 조정해, 유휴 시 비용을 줄이고 피크 시 성능을 유지한다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong><br>오토스케일링은 현재 작업 부하를 모니터링해 필요할 때 워커를 추가하고, 유휴 상태가 되면 자동으로 줄입니다. 항상 최대 워커를 유지하는 것이 아니라, 필요한 만큼만 사용해 비용과 성능을 동시에 최적화합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">4</span>Spot Instance 사용이 적합하지 않은 작업은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 중단 없이 실시간 대시보드를 업데이트하는 스트리밍 서비스</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 새벽 2시에 실행되는 월간 물성 데이터 집계 배치 잡</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 체크포인트가 설정된 대규모 ML 모델 학습</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 주말 야간에 실행되는 데이터 변환 파이프라인</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong><br>Spot Instance는 클라우드 제공사가 필요할 때 회수(중단)할 수 있습니다. 실시간 스트리밍처럼 중단이 허용되지 않는 서비스에는 On-Demand 인스턴스를 써야 합니다. 배치 잡이나 체크포인트를 사용하는 ML 학습은 중단 후 재시작이 가능해 Spot이 적합합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">5</span>클러스터 정책(Cluster Policy)이 해결하는 문제는?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 클러스터 시작 속도를 높여 준다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 오토스케일링 알고리즘을 더 정교하게 만든다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 관리자가 허용 인스턴스 타입·워커 수 등을 제한해 조직 전체의 비용을 통제한다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Spot Instance를 자동으로 선택해 비용을 줄인다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>클러스터 정책은 관리자가 허용 가능한 인스턴스 타입, 최대 워커 수, 자동 종료 시간 등을 미리 정의하는 기능입니다. 개발자가 실수로 고비용 클러스터를 만들거나 방치하는 것을 방지해 조직 전체의 비용을 관리합니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">✅ 채점하기</button>
+
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">NEXT UP</div>
+    <h3>Day 20 — 엔터프라이즈 AI 도입 전략 총정리</h3>
+    <p>20일 과정의 핵심 개념을 총정리하고, 고분자팀이 Databricks로 할 수 있는 것들을 모두 살펴봐요!</p>
+    <a class="back-link" href="index.html">← 강의 목록으로 돌아가기</a>
+  </div>
+
+</div>
+
+<script>
+const correctAnswers = [1, 2, 3, 0, 2];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Databricks 입문 | Day 7 — 데이터 타입: 정형·반정형·비정형</title>
+  <style>
+    :root {
+      --primary: #FF3621; --primary-dark: #c42a18;
+      --bg: #f7f8fc; --card: #ffffff; --text: #1a1a2e;
+      --muted: #6b7280; --border: #e5e7eb;
+      --correct: #10b981; --wrong: #ef4444; --accent: #3b5bdb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); color: white; padding: 48px 32px 40px; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--primary); color: white; font-size: 12px; font-weight: 700; letter-spacing: 1px; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+    .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .hero p { color: #a0aec0; font-size: 15px; }
+    .hero .meta { margin-top: 20px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .hero .meta span { font-size: 13px; color: #cbd5e0; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 60px; }
+    .section { background: var(--card); border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .section-title::before { content: ''; display: inline-block; width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+
+    .body-text { font-size: 15px; color: #374151; }
+    .body-text p { margin-bottom: 16px; }
+    .body-text strong { color: var(--text); font-weight: 700; }
+    .body-text h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text); padding-left: 12px; border-left: 3px solid var(--primary); }
+
+    .highlight { background: #fff7ed; border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 20px 0; font-size: 15px; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 6px; font-size: 15px; }
+
+    /* 데이터 타입 카드 */
+    .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0; }
+    @media(max-width: 640px) { .type-grid { grid-template-columns: 1fr; } }
+    .type-card { border-radius: 14px; padding: 20px; }
+    .type-card.structured { background: #f0fdf4; border: 2px solid #86efac; }
+    .type-card.semi { background: #eff6ff; border: 2px solid #93c5fd; }
+    .type-card.unstructured { background: #fff7ed; border: 2px solid #fed7aa; }
+    .type-card .t-icon { font-size: 32px; margin-bottom: 10px; }
+    .type-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .type-card.structured h4 { color: #166534; }
+    .type-card.semi h4 { color: #1e40af; }
+    .type-card.unstructured h4 { color: #9a3412; }
+    .type-card p { font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 8px; }
+    .type-card .examples { font-size: 12px; color: var(--muted); font-style: italic; }
+
+    /* 팀 예시 박스 */
+    .team-example { background: linear-gradient(135deg, #f0fdf4, #eff6ff); border: 1.5px solid #93c5fd; border-radius: 14px; padding: 20px 24px; margin: 20px 0; }
+    .team-example .te-title { font-size: 13px; font-weight: 700; color: #1e40af; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .team-example ul { font-size: 14px; color: #374151; padding-left: 20px; }
+    .team-example ul li { margin-bottom: 8px; }
+
+    /* 비교 카드 */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    @media(max-width: 580px) { .compare-grid { grid-template-columns: 1fr; } }
+    .compare-card { border-radius: 14px; padding: 20px; }
+    .compare-card.before { background: #fef2f2; border: 1.5px solid #fca5a5; }
+    .compare-card.after { background: #f0fdf4; border: 1.5px solid #86efac; }
+    .compare-card .c-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .compare-card.before .c-title { color: #dc2626; }
+    .compare-card.after .c-title { color: #16a34a; }
+    .compare-card ul { font-size: 13px; color: #374151; padding-left: 18px; }
+    .compare-card ul li { margin-bottom: 6px; }
+
+    /* 용어 카드 */
+    .term-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+    .term-card { background: #fafafa; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .term-card .t-word { font-size: 13px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .term-card .t-def { font-size: 13px; color: #374151; line-height: 1.6; }
+
+    /* 한줄요약 */
+    .summary-box { background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px 28px; margin: 20px 0; text-align: center; }
+    .summary-box .s-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #a0aec0; margin-bottom: 10px; }
+    .summary-box .s-text { font-size: 17px; font-weight: 700; line-height: 1.6; }
+    .summary-box .s-text span { color: #FFA500; }
+
+    /* 퀴즈 */
+    .quiz-item { border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+    .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .num { width: 28px; height: 28px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; border:1.5px solid #e5e7eb; cursor:pointer; font-size:14px; transition:all .2s; background:white; text-align:left; width:100%; }
+    .option:hover { border-color:#3b5bdb; background:#eef2ff; }
+    .option.selected { border-color:#3b5bdb; background:#eef2ff; font-weight:600; }
+    .option .opt-label { font-weight:700; color:#3b5bdb; min-width:20px; }
+    .option.correct { border-color:#10b981; background:#d1fae5; }
+    .option.wrong { border-color:#ef4444; background:#fee2e2; }
+    .option.correct .opt-label { color:#10b981; }
+    .option.wrong .opt-label { color:#ef4444; }
+    .answer-box { display: none; margin-top: 14px; padding: 14px 16px; background: #f0fdf4; border-radius: 10px; font-size: 13px; color: #166534; line-height: 1.7; border: 1px solid #86efac; }
+    .answer-box.show { display: block; }
+    .num.ox { font-size:11px; width:32px; height:32px; border-radius:10px; }
+    .num.o { background:#10b981; }
+    .num.x { background:#ef4444; }
+
+    .quiz-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background .2s; }
+    .quiz-submit:hover { background: var(--primary-dark); }
+    .quiz-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .score-bar { display: none; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; border-radius: 14px; padding: 24px; text-align: center; margin-top: 20px; }
+    .score-bar.show { display: block; }
+    .score-num { font-size: 48px; font-weight: 800; color: #FFA500; }
+    .score-msg { font-size: 18px; margin-top: 8px; color: #cbd5e0; }
+
+    .footer-card { background: linear-gradient(135deg, #1a1a2e, #16213e); color: white; border-radius: 16px; padding: 28px; text-align: center; margin-top: 24px; }
+    .footer-card .next { font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #a0aec0; margin-bottom: 8px; text-transform: uppercase; }
+    .footer-card h3 { font-size: 18px; font-weight: 700; color: #FFA500; }
+    .footer-card p { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #a0aec0; font-size: 13px; text-decoration: none; margin-top: 16px; transition: color .2s; }
+    .back-link:hover { color: white; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">Day 7 · 데이터 타입</div>
+  <h1>데이터 타입: 정형·반정형·비정형</h1>
+  <p>데이터의 세 가지 얼굴과 Databricks에서 다루는 법</p>
+  <div class="meta">
+    <span>📅 2026년 6월 17일</span>
+    <span>⏱ 학습 시간: 약 10분</span>
+    <span>📝 퀴즈: 5문제</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ① 개념 설명 -->
+  <div class="section">
+    <div class="section-title">개념 설명</div>
+    <div class="body-text">
+
+      <h3>데이터에도 종류가 있다</h3>
+      <p>
+        우리가 다루는 데이터는 생긴 모양에 따라 크게 세 가지로 나뉩니다. <strong>정형 데이터(Structured)</strong>, <strong>반정형 데이터(Semi-structured)</strong>, <strong>비정형 데이터(Unstructured)</strong>입니다. 어떤 종류의 데이터인지를 먼저 파악해야 저장 방법, 처리 방법, 분석 방법이 달라지기 때문에 이 구분은 매우 중요합니다.
+      </p>
+
+      <div class="type-grid">
+        <div class="type-card structured">
+          <div class="t-icon">📊</div>
+          <h4>정형 데이터</h4>
+          <p>행(Row)과 열(Column)로 구성된 표 형식. 스키마가 미리 정해져 있고, SQL로 바로 조회할 수 있습니다.</p>
+          <div class="examples">CSV, DB 테이블, Excel</div>
+        </div>
+        <div class="type-card semi">
+          <div class="t-icon">🗂️</div>
+          <h4>반정형 데이터</h4>
+          <p>구조가 있지만 고정된 스키마는 없습니다. 키-값 쌍이나 계층 구조를 가지며 유연하게 변할 수 있습니다.</p>
+          <div class="examples">JSON, XML, YAML, 로그 파일</div>
+        </div>
+        <div class="type-card unstructured">
+          <div class="t-icon">🖼️</div>
+          <h4>비정형 데이터</h4>
+          <p>정해진 구조가 없습니다. 텍스트, 이미지, 동영상, 오디오 등이 해당하며 전체 데이터의 80% 이상을 차지합니다.</p>
+          <div class="examples">이미지, PDF, 동영상, 이메일</div>
+        </div>
+      </div>
+
+      <h3>정형 데이터 — 표 형식, 바로 분석 가능</h3>
+      <p>
+        정형 데이터는 가장 다루기 쉬운 데이터입니다. 행과 열이 정확하게 구분되어 있어 SQL로 바로 조회·분석할 수 있습니다. 데이터베이스 테이블이 대표적인 예이며, 엑셀 파일이나 CSV도 이에 해당합니다. <strong>스키마(어떤 컬럼이 어떤 타입으로 존재하는가)가 미리 고정</strong>되어 있어 데이터 품질 관리가 쉽습니다.
+      </p>
+      <p>
+        Databricks에서는 Delta 테이블로 저장하고 Spark SQL이나 Python DataFrame으로 쉽게 처리할 수 있습니다.
+      </p>
+
+      <h3>반정형 데이터 — 구조는 있지만 유연하다</h3>
+      <p>
+        반정형 데이터는 완전히 고정된 스키마는 없지만 자체적인 구조 정보를 갖고 있습니다. JSON이 대표적인 예로, 키-값 쌍으로 이루어져 있고 중첩 구조도 가능합니다. 항목마다 포함된 필드가 다를 수 있어 유연성이 높습니다.
+      </p>
+
+      <div class="info-box">
+        <strong>💡 JSON 예시 — 시험 성적서</strong>
+        <code style="display:block; background:#dbeafe; padding:10px 14px; border-radius:8px; margin-top:8px; font-size:13px; font-family:monospace; white-space:pre-wrap;">{
+  "lot_id": "PP-2026-0617",
+  "product": "CPP 필름",
+  "tests": [
+    {"name": "인장강도", "value": 135, "unit": "MPa"},
+    {"name": "신율", "value": 420, "unit": "%"}
+  ]
+}</code>
+      </div>
+
+      <p>
+        Databricks에서는 <code style="background:#f3f4f6; padding:2px 6px; border-radius:4px; font-size:13px;">from_json()</code> 함수나 AUTO LOADER를 사용해 JSON·XML 파일을 자동으로 파싱하고 Delta 테이블로 변환할 수 있습니다.
+      </p>
+
+      <h3>비정형 데이터 — 구조가 없는 대다수의 데이터</h3>
+      <p>
+        세상에 존재하는 데이터의 80% 이상은 비정형 데이터입니다. 이미지, 동영상, PDF, 이메일 본문, 소셜 미디어 게시물 등이 해당합니다. 전통적인 데이터베이스로는 저장·분석하기 어려웠지만, <strong>Databricks의 레이크하우스 아키텍처는 비정형 데이터를 정형 데이터와 같은 공간에 저장하고 AI/ML 모델로 분석</strong>할 수 있게 합니다.
+      </p>
+
+      <h3>고분자팀 관점에서 보면?</h3>
+      <div class="team-example">
+        <div class="te-title">🏭 고분자제품기술팀 데이터 타입 분류</div>
+        <ul>
+          <li><strong>정형 데이터:</strong> PP·PE·EAA 필름 물성 측정값 테이블 (인장강도, 신율, 헤이즈, 용융지수 등 수치 데이터), ERP 생산 이력 데이터</li>
+          <li><strong>반정형 데이터:</strong> 시험 성적서 JSON 파일, 고객사 기술 요청서 XML, 장비별 측정 로그 파일</li>
+          <li><strong>비정형 데이터:</strong> 필름 불량 부위 사진(이미지), 검사 보고서 PDF, 현미경 관찰 이미지, 고객사 클레임 이메일 본문</li>
+        </ul>
+      </div>
+
+      <h3>Databricks에서 각 타입을 다루는 방법</h3>
+      <div class="compare-grid">
+        <div class="compare-card before">
+          <div class="c-title">📊 정형·반정형 데이터 처리</div>
+          <ul>
+            <li>Delta 테이블에 직접 적재</li>
+            <li>Spark SQL로 JOIN·집계 분석</li>
+            <li>Auto Loader로 JSON 자동 수집</li>
+            <li>스키마 추론(inferSchema) 지원</li>
+          </ul>
+        </div>
+        <div class="compare-card after">
+          <div class="c-title">🖼️ 비정형 데이터 처리</div>
+          <ul>
+            <li>이미지·PDF를 오브젝트 스토리지에 저장</li>
+            <li>메타데이터는 Delta 테이블로 관리</li>
+            <li>MLflow + AI 모델로 내용 분석</li>
+            <li>Databricks AI Functions로 텍스트 추출</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>핵심 용어 카드</h3>
+      <div class="term-grid">
+        <div class="term-card">
+          <div class="t-word">정형 데이터</div>
+          <div class="t-def">행과 열로 구성된 테이블 형식. SQL로 바로 조회 가능. CSV, DB 테이블이 대표적</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">반정형 데이터</div>
+          <div class="t-def">자체 구조 정보(키-값)를 갖지만 스키마가 고정되지 않은 데이터. JSON, XML이 대표적</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">비정형 데이터</div>
+          <div class="t-def">정해진 구조 없는 데이터. 전체 데이터의 80% 이상. 이미지, PDF, 동영상이 해당</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">Auto Loader</div>
+          <div class="t-def">Databricks에서 클라우드 스토리지의 새 파일을 자동으로 감지해 Delta 테이블에 적재하는 기능</div>
+        </div>
+        <div class="term-card">
+          <div class="t-word">스키마 추론</div>
+          <div class="t-def">JSON 등 반정형 데이터의 구조를 자동으로 파악해 테이블 스키마를 생성하는 기능</div>
+        </div>
+      </div>
+
+      <div class="summary-box">
+        <div class="s-label">📌 한 줄 요약</div>
+        <div class="s-text">
+          데이터는 <span>정형(표)</span> · <span>반정형(JSON)</span> · <span>비정형(이미지·PDF)</span>으로 나뉘며,<br>
+          Databricks 레이크하우스는 세 가지 모두를 하나의 플랫폼에서 처리합니다.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ② 오늘의 퀴즈 -->
+  <div class="section">
+    <div class="section-title">오늘의 퀴즈</div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">1</span>다음 중 정형 데이터(Structured Data)에 해당하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 불량 필름 촬영 사진 (JPG 파일)</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 시험 성적서 PDF 문서</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> PP 필름 물성 측정값 CSV 파일 (인장강도, 신율 등 수치 컬럼으로 구성)</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 장비 알람 로그 JSON 파일</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>행과 열로 구성되고 스키마가 고정된 CSV 파일이 정형 데이터입니다. JPG·PDF는 비정형, JSON은 반정형 데이터에 해당합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="1">
+      <div class="quiz-q"><span class="num">2</span>반정형 데이터(Semi-structured Data)의 특징으로 가장 올바른 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 반드시 행과 열이 일정하게 고정되어 있다</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 자체적인 구조 정보(키-값)를 가지지만 스키마가 레코드마다 다를 수 있다</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> SQL로 바로 조회할 수 없고 AI 모델만으로 분석이 가능하다</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 이미지와 동영상이 대표적인 예이다</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ②</strong><br>반정형 데이터는 JSON처럼 키-값 구조를 가지지만, 레코드마다 포함된 필드가 달라질 수 있어 고정 스키마가 없습니다. 이미지·동영상은 비정형 데이터입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="0">
+      <div class="quiz-q"><span class="num">3</span>세상에 존재하는 데이터 중 비정형 데이터가 차지하는 비율로 알려진 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> 80% 이상</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 약 50%</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 20% 미만</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 약 30%</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ①</strong><br>이미지, 동영상, 이메일, PDF 등 비정형 데이터는 전 세계 데이터의 80% 이상을 차지합니다. 이것이 레이크하우스 아키텍처가 비정형 데이터 처리를 중요하게 여기는 이유입니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="3">
+      <div class="quiz-q"><span class="num">4</span>고분자팀에서 생성하는 다음 데이터 중 반정형 데이터에 해당하는 것은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> ERP 시스템의 생산 이력 DB 테이블</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> 현미경으로 촬영한 필름 단면 이미지</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> 고객사에 제출한 검사 보고서 PDF</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> 장비에서 자동 생성되는 JSON 형식의 측정 로그</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ④</strong><br>JSON 형식의 측정 로그는 키-값 구조를 가진 반정형 데이터입니다. DB 테이블은 정형, 현미경 이미지·PDF는 비정형 데이터에 해당합니다.</div>
+    </div>
+
+    <div class="quiz-item" data-answer="2">
+      <div class="quiz-q"><span class="num">5</span>Databricks에서 클라우드 스토리지에 새로 올라오는 JSON 파일을 자동으로 감지해 Delta 테이블에 적재하는 기능은?</div>
+      <div class="options">
+        <button class="option" data-idx="0"><span class="opt-label">①</span> Delta Live Tables</button>
+        <button class="option" data-idx="1"><span class="opt-label">②</span> Unity Catalog</button>
+        <button class="option" data-idx="2"><span class="opt-label">③</span> Auto Loader</button>
+        <button class="option" data-idx="3"><span class="opt-label">④</span> Databricks SQL Warehouse</button>
+      </div>
+      <div class="answer-box"><strong>✅ 정답: ③</strong><br>Auto Loader는 S3·ADLS 같은 클라우드 오브젝트 스토리지를 모니터링하다가 새 파일이 추가되면 자동으로 읽어 Delta 테이블에 적재해주는 Databricks의 수집 기능입니다.</div>
+    </div>
+
+    <button class="quiz-submit" id="submitBtn" onclick="checkAnswers()">✅ 채점하기</button>
+
+    <div class="score-bar" id="scoreBar">
+      <div class="score-num" id="scoreNum"></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer-card">
+    <div class="next">NEXT UP</div>
+    <h3>Day 8 — 메달리온 아키텍처</h3>
+    <p>Bronze → Silver → Gold 3계층으로 데이터 품질을 단계적으로 높이는 방법을 배울 예정이에요!</p>
+    <a class="back-link" href="index.html">← 강의 목록으로 돌아가기</a>
+  </div>
+
+</div>
+
+<script>
+const correctAnswers = [2, 1, 0, 3, 2];
+let selected = [null, null, null, null, null];
+let submitted = false;
+
+document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+  item.querySelectorAll('.option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (submitted) return;
+      item.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selected[qIdx] = parseInt(btn.dataset.idx);
+    });
+  });
+});
+
+function checkAnswers() {
+  if (submitted) return;
+  const unanswered = selected.filter(s => s === null).length;
+  if (unanswered > 0) { alert(`아직 ${unanswered}문제를 풀지 않았어요!`); return; }
+  submitted = true;
+  let score = 0;
+  document.querySelectorAll('.quiz-item').forEach((item, qIdx) => {
+    const correct = correctAnswers[qIdx];
+    const isCorrect = selected[qIdx] === correct;
+    if (isCorrect) score++;
+    const numEl = item.querySelector('.num');
+    numEl.classList.add('ox');
+    if (isCorrect) { numEl.classList.add('o'); numEl.textContent = 'O'; }
+    else { numEl.classList.add('x'); numEl.textContent = 'X'; }
+    item.querySelectorAll('.option').forEach(btn => {
+      btn.disabled = true;
+      const idx = parseInt(btn.dataset.idx);
+      if (idx === correct) btn.classList.add('correct');
+      else if (idx === selected[qIdx]) btn.classList.add('wrong');
+    });
+    item.querySelector('.answer-box').classList.add('show');
+  });
+  document.getElementById('scoreBar').classList.add('show');
+  document.getElementById('scoreNum').textContent = `${score}/5`;
+  const msgs = {5:'🏆 완벽해요!', 4:'🎉 아주 잘했어요!', 3:'👍 절반 이상 맞췄어요!', 2:'📚 조금 더 읽어보고 재도전해봐요!', 1:'💪 괜찮아요, 처음엔 다 어려워요!', 0:'💪 개념 설명 다시 읽고 재도전해봐요!'};
+  document.getElementById('scoreMsg').textContent = msgs[score] || msgs[0];
+  document.getElementById('submitBtn').disabled = true;
+}
+</script>
+
+</body>
+</html>
